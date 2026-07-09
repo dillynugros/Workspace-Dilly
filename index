@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Work Management Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons for stable and beautiful iconography -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+        
+        #calendar-body {
+            /* Memaksa ukuran sel kalender seragam berapapun isinya */
+            grid-auto-rows: minmax(80px, 1fr); 
+        }
+
+        .task-list-enter {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Glassmorphism untuk Modal */
+        .glass-modal {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen flex flex-col md:flex-row font-sans overflow-hidden">
+
+    <!-- LEFT PANEL: Calendar & Heatmap -->
+    <div class="w-full md:w-2/3 h-full flex flex-col border-r border-slate-200 bg-white">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white shadow-sm z-10">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="ph-fill ph-kanban text-brand-600"></i> Workspace Analis v.1.0
+                </h1>
+                <p class="text-sm text-slate-500">Kalender Pekerjaan Mas Dilly</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="changeMonth(-1)" class="p-2 hover:bg-slate-100 rounded-full transition-colors"><i class="ph ph-caret-left text-xl"></i></button>
+                <h2 id="current-month-display" class="text-xl font-semibold min-w-[150px] text-center">Juli 2026</h2>
+                <button onclick="changeMonth(1)" class="p-2 hover:bg-slate-100 rounded-full transition-colors"><i class="ph ph-caret-right text-xl"></i></button>
+            </div>
+        </div>
+
+        <!-- Calendar Area -->
+        <div class="flex-1 p-6 overflow-y-auto no-scrollbar flex flex-col">
+            <!-- Days Header -->
+            <div class="calendar-grid mb-2">
+                <div class="text-center text-sm font-semibold text-rose-500">Min</div>
+                <div class="text-center text-sm font-semibold text-slate-500">Sen</div>
+                <div class="text-center text-sm font-semibold text-slate-500">Sel</div>
+                <div class="text-center text-sm font-semibold text-slate-500">Rab</div>
+                <div class="text-center text-sm font-semibold text-slate-500">Kam</div>
+                <div class="text-center text-sm font-semibold text-slate-500">Jum</div>
+                <div class="text-center text-sm font-semibold text-brand-500">Sab</div>
+            </div>
+            <!-- Calendar Grid -->
+            <div id="calendar-body" class="calendar-grid flex-1">
+                <!-- Javascript will populate this -->
+            </div>
+
+            <!-- Heatmap / Intensitas Kinerja -->
+            <div class="mt-6 pt-4 border-t border-slate-100">
+                <h3 class="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+                    <i class="ph-fill ph-fire text-orange-500"></i> Intensitas Kinerja (30 Hari Terakhir)
+                </h3>
+                <div class="flex flex-wrap gap-1.5" id="heatmap">
+                    <!-- Javascript will populate this -->
+                </div>
+                <div class="flex items-center gap-2 mt-2 text-xs text-slate-400">
+                    <span>Sedikit</span>
+                    <div class="w-3 h-3 bg-slate-200 rounded-sm"></div>
+                    <div class="w-3 h-3 bg-brand-300 rounded-sm"></div>
+                    <div class="w-3 h-3 bg-brand-500 rounded-sm"></div>
+                    <div class="w-3 h-3 bg-brand-700 rounded-sm"></div>
+                    <span>Padat</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL: Task Management -->
+    <div class="w-full md:w-1/3 h-full bg-slate-50 flex flex-col relative">
+        <!-- Input Form -->
+        <div class="p-6 bg-white border-b border-slate-200 shadow-sm z-10">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <i class="ph-fill ph-plus-circle text-brand-500"></i> Manajemen Tugas
+            </h3>
+            <div class="space-y-3">
+                <input type="text" id="task-title" placeholder="Judul Tugas..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-sm">
+                
+                <textarea id="task-desc" placeholder="Keterangan / Catatan spesifik..." rows="2" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-sm resize-none"></textarea>
+                
+                <div class="flex gap-2">
+                    <select id="task-priority" class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none text-sm">
+                        <option value="high">🔴 Mendesak & Penting</option>
+                        <option value="medium">🟡 Penting</option>
+                        <option value="low">🔵 Kasual</option>
+                        <option value="routine">🟢 Rutinitas</option>
+                    </select>
+                    <input type="date" id="task-date" class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none text-sm">
+                </div>
+                <button onclick="handleAddTask()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm">
+                    <i class="ph-bold ph-paper-plane-right"></i> Tambahkan
+                </button>
+            </div>
+        </div>
+
+        <!-- Task List Header -->
+        <div class="px-6 py-4 flex items-center justify-between">
+            <h3 class="font-bold text-slate-700">Daftar Pekerjaan</h3>
+        </div>
+
+        <!-- Task List Items -->
+        <div id="task-list" class="flex-1 overflow-y-auto px-6 pb-6 space-y-3 no-scrollbar">
+            <!-- Javascript will populate this -->
+        </div>
+    </div>
+
+    <!-- MODALS -->
+
+    <!-- 1. Routine Modal -->
+    <div id="routine-modal" class="fixed inset-0 glass-modal z-50 hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-xl w-[90%] max-w-md p-6 transform scale-95 transition-transform duration-300" id="routine-modal-content">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="ph-fill ph-arrows-clockwise text-3xl text-green-600"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800">Atur Rutinitas</h3>
+                <p class="text-sm text-slate-500 mt-2">Tugas ini ditandai sebagai rutinitas. Seberapa sering sistem harus menjadwalkannya secara otomatis?</p>
+            </div>
+            <div class="space-y-3">
+                <button onclick="saveRoutineTask('weekly')" class="w-full p-4 border border-slate-200 rounded-xl hover:border-brand-500 hover:bg-brand-50 text-left transition-all flex items-center justify-between group">
+                    <div>
+                        <div class="font-bold text-slate-700 group-hover:text-brand-700">Setiap Minggu</div>
+                        <div class="text-xs text-slate-500">Otomatis terjadwal di hari yang sama tiap minggunya</div>
+                    </div>
+                    <i class="ph-bold ph-calendar-check text-brand-500 text-xl"></i>
+                </button>
+                <button onclick="saveRoutineTask('monthly')" class="w-full p-4 border border-slate-200 rounded-xl hover:border-brand-500 hover:bg-brand-50 text-left transition-all flex items-center justify-between group">
+                    <div>
+                        <div class="font-bold text-slate-700 group-hover:text-brand-700">Setiap Bulan</div>
+                        <div class="text-xs text-slate-500">Otomatis terjadwal di tanggal yang sama tiap bulannya</div>
+                    </div>
+                    <i class="ph-bold ph-calendar text-brand-500 text-xl"></i>
+                </button>
+                <button onclick="saveRoutineTask('none')" class="w-full p-3 text-center text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors">
+                    Hanya Sekali (Jangan diulang)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Day Details Modal -->
+    <div id="day-modal" class="fixed inset-0 glass-modal z-50 hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-xl w-[90%] max-w-lg flex flex-col max-h-[80vh] transform scale-95 transition-transform duration-300" id="day-modal-content">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                <div>
+                    <h3 class="font-bold text-lg text-slate-800" id="day-modal-title">Detail Hari</h3>
+                    <p class="text-xs text-slate-500" id="day-modal-subtitle">Daftar Pekerjaan</p>
+                </div>
+                <button onclick="closeDayModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-500 transition-colors">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+            <div class="p-5 overflow-y-auto flex-1 space-y-3" id="day-modal-tasks">
+                <!-- Javascript will populate this -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase Setup ---
+        // KONFIGURASI UNTUK GOOGLE SITES: 
+        // Jika Anda ingin data tersimpan permanen lintas perangkat di Google Sites,
+        // silakan ganti nilai di bawah ini dengan project Firebase gratis milik Anda.
+        // Jika dibiarkan kosong, aplikasi tetap bisa berjalan (namun hanya sebagai memori sementara di perangkat saat itu).
+        const myFirebaseConfig = {
+            apiKey: "API_KEY_ANDA",
+            authDomain: "PROJECT_ANDA.firebaseapp.com",
+            projectId: "PROJECT_ID_ANDA",
+            storageBucket: "",
+            messagingSenderId: "",
+            appId: ""
+        };
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : myFirebaseConfig;
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'mas-dilly-workspace';
+        let currentUser = null;
+
+        // --- Core Data & State ---
+        let tasks = []; // Array of task objects
+        let realToday = new Date(); // Hari ini secara realita
+        let currentDate = new Date(realToday.getFullYear(), realToday.getMonth(), realToday.getDate()); // Pointer navigasi bulan
+        let pendingRoutineTask = null; // Menyimpan data sementara saat modal rutinitas muncul
+
+        // --- Expose Fungsi ke Global (Dibutuhkan untuk inline HTML onclick pada tipe module) ---
+        window.changeMonth = changeMonth;
+        window.handleAddTask = handleAddTask;
+        window.saveRoutineTask = saveRoutineTask;
+        window.closeDayModal = closeDayModal;
+
+        // Inisialisasi Aplikasi
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set input date default ke hari ini
+            document.getElementById('task-date').value = formatDateForInput(realToday);
+            
+            // 1. Inisialisasi Auth & Login Tersembunyi
+            const initAuth = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.warn("Server Authentication tertunda (Berjalan dalam mode Memori Lokal).");
+                }
+            };
+            initAuth();
+            
+            // 2. Pantau sesi, jika berhasil masuk, pasang pendengar data Cloud
+            onAuthStateChanged(auth, (user) => {
+                currentUser = user;
+                if (user) {
+                    setupRealtimeListener();
+                }
+            });
+            
+            // Render awal UI kosong
+            updateDashboard();
+        });
+
+        // --- Firebase Database Functions ---
+        function setupRealtimeListener() {
+            if (!currentUser) return;
+            const tasksRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks');
+            
+            onSnapshot(tasksRef, (snapshot) => {
+                tasks = snapshot.docs.map(doc => doc.data());
+                updateDashboard();
+            }, (error) => {
+                console.error("Gagal sinkronisasi data:", error);
+            });
+        }
+
+        async function saveTaskToDB(taskObj) {
+            if (!currentUser) return;
+            try {
+                const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', taskObj.id.toString());
+                await setDoc(taskRef, taskObj);
+            } catch (e) { console.error("Error DB:", e); }
+        }
+
+        // --- Helper Functions ---
+        function formatDateForInput(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dateObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function isSameDay(date1, date2) {
+            return date1.getFullYear() === date2.getFullYear() &&
+                   date1.getMonth() === date2.getMonth() &&
+                   date1.getDate() === date2.getDate();
+        }
+
+        function getPriorityConfig(priority) {
+            const configs = {
+                'high': { color: 'bg-rose-100 text-rose-700 border-rose-200', icon: '🔴', label: 'Mendesak' },
+                'medium': { color: 'bg-amber-100 text-amber-700 border-amber-200', icon: '🟡', label: 'Penting' },
+                'low': { color: 'bg-blue-100 text-blue-700 border-blue-200', icon: '🔵', label: 'Kasual' },
+                'routine': { color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: '🟢', label: 'Rutinitas' }
+            };
+            return configs[priority] || configs['low'];
+        }
+
+        // --- Master Render Function ---
+        function updateDashboard() {
+            renderCalendar();
+            renderTasks();
+            generateHeatmap();
+        }
+
+        // --- Feature: Calendar ---
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            updateDashboard();
+        }
+
+        function renderCalendar() {
+            const monthDisplay = document.getElementById('current-month-display');
+            const calendarBody = document.getElementById('calendar-body');
+            
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            // Set header teks
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            monthDisplay.textContent = `${monthNames[month]} ${year}`;
+
+            // Kosongkan grid
+            calendarBody.innerHTML = '';
+
+            // Hitung logika kalender
+            const firstDayOfMonth = new Date(year, month, 1).getDay(); // 0 = Minggu
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Render kotak kosong sebelum hari pertama
+            for (let i = 0; i < firstDayOfMonth; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'bg-transparent p-1';
+                calendarBody.appendChild(emptyCell);
+            }
+
+            // Render hari-hari dalam bulan tersebut
+            for (let day = 1; day <= daysInMonth; day++) {
+                const cellDate = new Date(year, month, day);
+                const cellDateStr = formatDateForInput(cellDate);
+                
+                const isToday = isSameDay(cellDate, realToday);
+                const dayTasks = tasks.filter(t => t.date === cellDateStr);
+                const hasTasks = dayTasks.length > 0;
+
+                const cell = document.createElement('div');
+                cell.className = `rounded-lg p-2 border relative group flex flex-col overflow-hidden transition-all shadow-sm ${isToday ? 'border-brand-500 bg-brand-50/50' : 'border-slate-100 bg-white hover:border-brand-300'}`;
+                
+                if (hasTasks) {
+                    cell.classList.add('cursor-pointer');
+                    cell.onclick = (e) => {
+                        if(e.target.closest('.delete-day-btn')) return; 
+                        openDayModal(cellDateStr, dayTasks);
+                    };
+                }
+
+                const cellHeader = document.createElement('div');
+                cellHeader.className = 'flex justify-between items-start mb-1';
+                
+                const dateNum = document.createElement('span');
+                dateNum.className = `text-sm font-medium ${isToday ? 'text-brand-600 font-bold' : (cellDate.getDay() === 0 ? 'text-rose-500' : 'text-slate-600')}`;
+                dateNum.textContent = day;
+                cellHeader.appendChild(dateNum);
+
+                if (hasTasks) {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-day-btn opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 transition-all text-xs flex items-center justify-center p-1 rounded hover:bg-rose-50';
+                    deleteBtn.innerHTML = '<i class="ph-bold ph-trash"></i>';
+                    
+                    let deleteState = 0;
+                    deleteBtn.onclick = (e) => {
+                        e.stopPropagation(); 
+                        if (deleteState === 0) {
+                            deleteBtn.innerHTML = '<span class="font-bold">Yakin?</span>';
+                            deleteBtn.classList.replace('text-slate-400', 'text-rose-500');
+                            deleteBtn.classList.add('bg-rose-100');
+                            deleteState = 1;
+                            
+                            setTimeout(() => {
+                                if(deleteState === 1) {
+                                    deleteBtn.innerHTML = '<i class="ph-bold ph-trash"></i>';
+                                    deleteBtn.classList.replace('text-rose-500', 'text-slate-400');
+                                    deleteBtn.classList.remove('bg-rose-100');
+                                    deleteState = 0;
+                                }
+                            }, 3000);
+                        } else {
+                            clearDayTasks(cellDateStr);
+                        }
+                    };
+                    cellHeader.appendChild(deleteBtn);
+                }
+                
+                cell.appendChild(cellHeader);
+
+                const indicatorContainer = document.createElement('div');
+                indicatorContainer.className = 'flex-1 flex flex-col gap-1 overflow-y-auto no-scrollbar';
+
+                dayTasks.forEach(task => {
+                    const conf = getPriorityConfig(task.priority);
+                    const indicator = document.createElement('div');
+                    indicator.className = `text-[10px] md:text-xs truncate px-1.5 py-0.5 rounded border ${conf.color} ${task.completed ? 'opacity-50 line-through' : ''}`;
+                    
+                    let recIcon = '';
+                    if(task.recurrence === 'weekly') recIcon = '🔄';
+                    if(task.recurrence === 'monthly') recIcon = '🔁';
+                    
+                    indicator.textContent = `${task.title} ${recIcon}`;
+                    indicatorContainer.appendChild(indicator);
+                });
+
+                cell.appendChild(indicatorContainer);
+                calendarBody.appendChild(cell);
+            }
+        }
+
+        // --- Feature: Task Management ---
+        async function handleAddTask() {
+            const title = document.getElementById('task-title').value.trim();
+            const desc = document.getElementById('task-desc').value.trim();
+            const priority = document.getElementById('task-priority').value;
+            const date = document.getElementById('task-date').value;
+
+            if (!title || !date) {
+                const titleEl = document.getElementById('task-title');
+                titleEl.classList.add('border-rose-500', 'animate-pulse');
+                setTimeout(() => titleEl.classList.remove('border-rose-500', 'animate-pulse'), 1000);
+                return;
+            }
+
+            const newTask = {
+                id: Date.now(),
+                title,
+                desc,
+                priority,
+                date,
+                completed: false,
+                recurrence: 'none'
+            };
+
+            if (priority === 'routine') {
+                pendingRoutineTask = newTask;
+                showModal('routine-modal');
+            } else {
+                // OPTIMISTIC UI: Update lokal terlebih dahulu agar UI tidak macet
+                tasks.push(newTask);
+                finishAddingTask();
+                
+                // Coba simpan ke server di background
+                await saveTaskToDB(newTask);
+            }
+        }
+
+        async function saveRoutineTask(recurrenceType) {
+            if (!pendingRoutineTask) return;
+            
+            pendingRoutineTask.recurrence = recurrenceType;
+            const baseDate = new Date(pendingRoutineTask.date);
+            const tasksToSave = [];
+            
+            // 1. Simpan tugas orisinal secara lokal
+            const originalTask = {...pendingRoutineTask};
+            tasksToSave.push(originalTask);
+            tasks.push(originalTask); // Update LOKAL
+            
+            // 2. Pre-populate lokal
+            if (recurrenceType === 'weekly') {
+                for (let i = 1; i <= 52; i++) { 
+                    const nextDate = new Date(baseDate);
+                    nextDate.setDate(nextDate.getDate() + (7 * i));
+                    const newT = {
+                        ...pendingRoutineTask,
+                        id: Date.now() + i,
+                        date: formatDateForInput(nextDate)
+                    };
+                    tasksToSave.push(newT);
+                    tasks.push(newT); // Update LOKAL
+                }
+            } else if (recurrenceType === 'monthly') {
+                for (let i = 1; i <= 12; i++) { 
+                    const nextDate = new Date(baseDate);
+                    nextDate.setMonth(nextDate.getMonth() + i);
+                    const newT = {
+                        ...pendingRoutineTask,
+                        id: Date.now() + i,
+                        date: formatDateForInput(nextDate)
+                    };
+                    tasksToSave.push(newT);
+                    tasks.push(newT); // Update LOKAL
+                }
+            }
+            
+            hideModal('routine-modal');
+            pendingRoutineTask = null;
+            
+            // Render UI langsung tanpa menunggu server (Optimistic UI)
+            finishAddingTask();
+            
+            // Sinkronisasi ke server di background jika terhubung
+            if (currentUser) {
+                try {
+                    await Promise.all(tasksToSave.map(t => saveTaskToDB(t)));
+                } catch (error) {
+                    console.error("Error saving routines:", error);
+                }
+            }
+        }
+
+        function finishAddingTask() {
+            document.getElementById('task-title').value = '';
+            document.getElementById('task-desc').value = '';
+            updateDashboard(); // Pastikan render dipanggil
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('task-list');
+            list.innerHTML = '';
+            
+            const sortedTasks = [...tasks].sort((a, b) => {
+                if(a.completed !== b.completed) return a.completed ? 1 : -1;
+                return new Date(a.date) - new Date(b.date);
+            });
+
+            if (sortedTasks.length === 0) {
+                list.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-40 text-slate-400 text-center">
+                        <i class="ph ph-coffee text-4xl mb-2"></i>
+                        <p class="text-sm">Belum ada pekerjaan.<br>Semua terkendali.</p>
+                    </div>`;
+                return;
+            }
+
+            sortedTasks.forEach(task => {
+                const conf = getPriorityConfig(task.priority);
+                const isLate = !task.completed && (new Date(task.date) < realToday) && !isSameDay(new Date(task.date), realToday);
+                
+                const tDate = new Date(task.date);
+                const dateStr = isSameDay(tDate, realToday) ? 'Hari Ini' : tDate.toLocaleDateString('id-ID', {day: 'numeric', month:'short'});
+
+                const item = document.createElement('div');
+                item.className = `task-list-enter p-4 rounded-xl border bg-white shadow-sm flex gap-3 transition-all ${task.completed ? 'opacity-60 border-slate-200' : (isLate ? 'border-rose-300' : 'border-slate-200 hover:border-brand-300')}`;
+                
+                const checkBtn = document.createElement('button');
+                checkBtn.onclick = () => toggleTaskStatus(task.id);
+                checkBtn.className = `mt-1 w-5 h-5 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors ${task.completed ? 'bg-brand-500 border-brand-500 text-white' : 'border-slate-300 hover:border-brand-500 text-transparent'}`;
+                checkBtn.innerHTML = '<i class="ph-bold ph-check text-xs"></i>';
+
+                const content = document.createElement('div');
+                content.className = 'flex-1 min-w-0';
+                
+                const titleWrap = document.createElement('div');
+                titleWrap.className = 'flex justify-between items-start mb-1';
+                
+                const title = document.createElement('h4');
+                title.className = `font-bold text-sm truncate pr-2 ${task.completed ? 'line-through text-slate-500' : 'text-slate-800'}`;
+                title.textContent = task.title;
+                
+                let recBadge = '';
+                if(task.recurrence === 'weekly') recBadge = '<span class="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full whitespace-nowrap"><i class="ph-bold ph-arrows-clockwise"></i> Mg</span>';
+                if(task.recurrence === 'monthly') recBadge = '<span class="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full whitespace-nowrap"><i class="ph-bold ph-arrows-clockwise"></i> Bln</span>';
+
+                titleWrap.innerHTML = `<div>${title.outerHTML}</div><div class="flex gap-1 items-center shrink-0">${recBadge}</div>`;
+                
+                let descHtml = '';
+                if (task.desc) {
+                    descHtml = `<p class="text-xs text-slate-500 mb-2 truncate">${task.desc}</p>`;
+                }
+
+                const meta = document.createElement('div');
+                meta.className = 'flex gap-2 items-center text-[10px] font-medium mt-1';
+                meta.innerHTML = `
+                    <span class="${conf.color} px-2 py-0.5 rounded">${conf.label}</span>
+                    <span class="${isLate ? 'text-rose-600 font-bold bg-rose-50 px-1 rounded' : 'text-slate-500'} flex items-center gap-1">
+                        <i class="ph-bold ph-calendar-blank"></i> ${dateStr}
+                    </span>
+                `;
+
+                content.appendChild(titleWrap);
+                if (descHtml) content.insertAdjacentHTML('beforeend', descHtml);
+                content.appendChild(meta);
+
+                const delBtn = document.createElement('button');
+                delBtn.onclick = () => deleteSingleTask(task.id);
+                delBtn.className = 'w-6 h-6 shrink-0 rounded flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors';
+                delBtn.innerHTML = '<i class="ph-bold ph-trash"></i>';
+
+                item.appendChild(checkBtn);
+                item.appendChild(content);
+                item.appendChild(delBtn);
+                
+                list.appendChild(item);
+            });
+        }
+
+        // --- Data Manipulation ---
+        async function toggleTaskStatus(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                // Optimistic UI lokal
+                task.completed = !task.completed;
+                updateDashboard();
+                
+                // Coba sinkronisasi server
+                if (currentUser) {
+                    try {
+                        const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', id.toString());
+                        await updateDoc(taskRef, { completed: task.completed });
+                    } catch (e) { console.error("Error DB:", e); }
+                }
+            }
+        }
+
+        async function deleteSingleTask(id) {
+            // Optimistic UI lokal
+            tasks = tasks.filter(t => t.id !== id);
+            updateDashboard();
+            
+            // Coba sinkronisasi server
+            if (currentUser) {
+                try {
+                    const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', id.toString());
+                    await deleteDoc(taskRef);
+                } catch (e) { console.error("Error DB:", e); }
+            }
+        }
+
+        async function clearDayTasks(dateStr) {
+            const tasksToDelete = tasks.filter(t => t.date === dateStr);
+            
+            // Optimistic UI lokal
+            tasks = tasks.filter(t => t.date !== dateStr);
+            updateDashboard();
+            hideModal('day-modal');
+            
+            // Coba sinkronisasi server
+            if (currentUser) {
+                try {
+                    await Promise.all(tasksToDelete.map(t => {
+                        const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', t.id.toString());
+                        return deleteDoc(taskRef);
+                    }));
+                } catch(e) { console.error("Error DB:", e); }
+            }
+        }
+
+        // --- Feature: Heatmap (Intensitas) ---
+        function generateHeatmap() {
+            const heatmap = document.getElementById('heatmap');
+            if (!heatmap) return;
+            heatmap.innerHTML = ''; 
+
+            const taskCounts = {};
+            tasks.forEach(task => {
+                if (task.completed) {
+                    taskCounts[task.date] = (taskCounts[task.date] || 0) + 1;
+                }
+            });
+
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date(realToday.getFullYear(), realToday.getMonth(), realToday.getDate());
+                d.setDate(d.getDate() - i);
+                
+                const dateStr = formatDateForInput(d);
+                const count = taskCounts[dateStr] || 0;
+
+                const block = document.createElement('div');
+                block.className = 'w-3.5 h-3.5 md:w-4 md:h-4 rounded-sm transition-all duration-300 cursor-help hover:scale-125 hover:shadow-sm';
+                
+                if (count === 0) block.classList.add('bg-slate-200');
+                else if (count === 1) block.classList.add('bg-brand-300');
+                else if (count === 2) block.classList.add('bg-brand-500');
+                else block.classList.add('bg-brand-700');
+
+                const dateIndo = d.toLocaleDateString('id-ID', {day: 'numeric', month:'short'});
+                block.title = count === 0 
+                    ? `Tidak ada tugas selesai pada ${dateIndo}` 
+                    : `${count} tugas diselesaikan pada ${dateIndo}`;
+                
+                heatmap.appendChild(block);
+            }
+        }
+
+        // --- Feature: Modals ---
+        function showModal(id) {
+            const modal = document.getElementById(id);
+            const content = document.getElementById(`${id}-content`);
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function hideModal(id) {
+            const modal = document.getElementById(id);
+            const content = document.getElementById(`${id}-content`);
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function openDayModal(dateStr, dayTasks) {
+            const d = new Date(dateStr);
+            document.getElementById('day-modal-title').textContent = d.toLocaleDateString('id-ID', {weekday: 'long', day: 'numeric', month:'long', year:'numeric'});
+            
+            const list = document.getElementById('day-modal-tasks');
+            list.innerHTML = '';
+            
+            dayTasks.forEach(task => {
+                const conf = getPriorityConfig(task.priority);
+                const item = document.createElement('div');
+                item.className = 'p-3 rounded-lg border border-slate-200 bg-white flex justify-between items-start shadow-sm';
+                
+                let descStr = task.desc ? `<p class="text-xs text-slate-500 mt-1">${task.desc}</p>` : '';
+                
+                item.innerHTML = `
+                    <div class="pr-4">
+                        <div class="flex items-center gap-2">
+                            <span class="${task.completed ? 'line-through text-slate-400' : 'font-bold text-slate-700'}">${task.title}</span>
+                            <span class="${conf.color} text-[10px] px-1.5 py-0.5 rounded">${conf.label}</span>
+                        </div>
+                        ${descStr}
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+            
+            showModal('day-modal');
+        }
+
+        function closeDayModal() {
+            hideModal('day-modal');
+        }
+
+    </script>
+</body>
+</html>
