@@ -46,7 +46,7 @@
                 <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
                     <i class="ph-fill ph-kanban text-brand-600"></i> Workspace Analis v.3.0
                 </h1>
-                <p class="text-sm text-slate-500">Kalender Pekerjaan Mas Dilly</p>
+                <p class="text-sm text-slate-500" id="user-welcome-text">Kalender Pekerjaan Mas Dilly</p>
             </div>
             <div class="flex items-center gap-2">
                 <button onclick="changeMonth(-1)" class="p-2 hover:bg-slate-100 rounded-full"><i class="ph ph-caret-left text-xl"></i></button>
@@ -83,7 +83,7 @@
                  data-client_id="691342255763-c2ehv986h2tnt71sc0c4fh7djce3pkav.apps.googleusercontent.com"
                  data-callback="handleCredentialResponse">
             </div>
-            <p class="text-xs text-blue-600 mt-3">Data akan tersimpan otomatis di browser Anda</p>
+            <p class="text-xs text-blue-600 mt-3">Data akan tersimpan secara spesifik untuk akun Anda.</p>
         </div>
 
         <div id="task-form" class="p-6 bg-white border-b border-slate-200 shadow-sm z-10 hidden">
@@ -151,17 +151,44 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'workspace-dilly-tasks';
+        const BASE_STORAGE_KEY = 'workspace-dilly-tasks';
+        let currentUserEmail = null; // Menyimpan email akun yang sedang login
+        
         let tasks = [];
         let realToday = new Date();
         let currentDate = new Date(realToday.getFullYear(), realToday.getMonth(), realToday.getDate());
         let pendingRoutineTask = null;
         let isLoggedIn = false;
 
+        // Fungsi bantuan untuk menerjemahkan data login dari Google
+        function decodeJwtResponse(token) {
+            let base64Url = token.split('.')[1];
+            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            let jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        // Fungsi dinamis untuk mendapatkan nama penyimpanan berdasarkan email
+        function getStorageKey() {
+            return currentUserEmail ? `${BASE_STORAGE_KEY}-${currentUserEmail}` : BASE_STORAGE_KEY;
+        }
+
         function handleCredentialResponse(response) {
-            console.log('✅ Login berhasil!');
+            // Menerjemahkan identitas pengguna
+            const responsePayload = decodeJwtResponse(response.credential);
+            currentUserEmail = responsePayload.email;
+            
+            console.log('✅ Login berhasil sebagai:', currentUserEmail);
+            
             isLoggedIn = true;
             updateAuthUI();
+            
+            // Mengubah sub-judul agar Anda tahu sedang login pakai akun siapa
+            document.getElementById('user-welcome-text').innerHTML = `Kalender Pekerjaan <span class="font-semibold text-brand-600">${responsePayload.name}</span>`;
+            
+            // Muat tugas khusus untuk email ini
             loadTasks();
             updateDashboard();
         }
@@ -183,18 +210,23 @@
         }
 
         function loadTasks() {
-            const saved = localStorage.getItem(STORAGE_KEY);
+            // Mengambil data dari localStorage spesifik milik akun terkait
+            const saved = localStorage.getItem(getStorageKey());
             if (saved) {
                 try {
                     tasks = JSON.parse(saved);
                 } catch (e) {
                     tasks = [];
                 }
+            } else {
+                // Jika login pakai akun baru, pastikan kalendernya bersih
+                tasks = [];
             }
         }
 
         function saveTasks() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+            // Menyimpan data ke localStorage spesifik milik akun terkait
+            localStorage.setItem(getStorageKey(), JSON.stringify(tasks));
         }
 
         window.changeMonth = (delta) => {
@@ -395,7 +427,6 @@
             const list = document.getElementById('task-list');
             list.innerHTML = '';
             
-            // --- PEMBARUAN: Menyaring tugas agar yang kadaluarsa (sebelum hari ini) tidak ditampilkan di Sidebar ---
             const todayStr = formatDateForInput(realToday);
             
             const sortedTasks = [...tasks]
@@ -520,7 +551,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('task-date').value = formatDateForInput(realToday);
-            loadTasks();
+            // Hapus pemanggilan loadTasks() di sini agar kalender kosong sebelum ada yang login
             updateDashboard();
         });
 
