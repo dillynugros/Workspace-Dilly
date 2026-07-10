@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Work Management Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Phosphor Icons for stable and beautiful iconography -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <!-- Google Drive API -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
         tailwind.config = {
@@ -34,89 +32,30 @@
     <style>
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 6px;
-        }
-        
-        #calendar-body {
-            grid-auto-rows: minmax(80px, 1fr); 
-        }
-
-        .task-list-enter {
-            animation: slideIn 0.3s ease-out forwards;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .glass-modal {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-
-        .sync-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-
-        .sync-syncing {
-            background: #fef08a;
-            color: #854d0e;
-            animation: pulse 1s infinite;
-        }
-
-        .sync-success {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .sync-error {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+        #calendar-body { grid-auto-rows: minmax(80px, 1fr); }
+        .task-list-enter { animation: slideIn 0.3s ease-out forwards; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .glass-modal { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen flex flex-col md:flex-row font-sans overflow-hidden">
-
-    <!-- LEFT PANEL: Calendar & Heatmap -->
     <div class="w-full md:w-2/3 h-full flex flex-col border-r border-slate-200 bg-white">
-        <!-- Header -->
         <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white shadow-sm z-10">
             <div>
                 <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
                     <i class="ph-fill ph-kanban text-brand-600"></i> Workspace Analis v.3.0
                 </h1>
-                <p class="text-sm text-slate-500">Kalender Pekerjaan Mas Dilly (Google Drive Sync)</p>
+                <p class="text-sm text-slate-500">Kalender Pekerjaan Mas Dilly</p>
             </div>
             <div class="flex items-center gap-2">
-                <div id="sync-status" class="sync-indicator sync-success hidden">
-                    <i class="ph-bold ph-check-circle"></i>
-                    <span>Tersinkronisasi</span>
-                </div>
-                <button onclick="changeMonth(-1)" class="p-2 hover:bg-slate-100 rounded-full transition-colors"><i class="ph ph-caret-left text-xl"></i></button>
+                <button onclick="changeMonth(-1)" class="p-2 hover:bg-slate-100 rounded-full"><i class="ph ph-caret-left text-xl"></i></button>
                 <h2 id="current-month-display" class="text-xl font-semibold min-w-[150px] text-center">Juli 2026</h2>
-                <button onclick="changeMonth(1)" class="p-2 hover:bg-slate-100 rounded-full transition-colors"><i class="ph ph-caret-right text-xl"></i></button>
+                <button onclick="changeMonth(1)" class="p-2 hover:bg-slate-100 rounded-full"><i class="ph ph-caret-right text-xl"></i></button>
             </div>
         </div>
 
-        <!-- Calendar Area -->
         <div class="flex-1 p-6 overflow-y-auto no-scrollbar flex flex-col">
-            <!-- Days Header -->
             <div class="calendar-grid mb-2">
                 <div class="text-center text-sm font-semibold text-rose-500">Min</div>
                 <div class="text-center text-sm font-semibold text-slate-500">Sen</div>
@@ -126,89 +65,57 @@
                 <div class="text-center text-sm font-semibold text-slate-500">Jum</div>
                 <div class="text-center text-sm font-semibold text-brand-500">Sab</div>
             </div>
-            <!-- Calendar Grid -->
-            <div id="calendar-body" class="calendar-grid flex-1">
-                <!-- Javascript will populate this -->
-            </div>
+            <div id="calendar-body" class="calendar-grid flex-1"></div>
 
-            <!-- Heatmap / Intensitas Kinerja -->
             <div class="mt-6 pt-4 border-t border-slate-100">
                 <h3 class="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-                    <i class="ph-fill ph-fire text-orange-500"></i> Intensitas Kinerja (30 Hari Terakhir)
+                    <i class="ph-fill ph-fire text-orange-500"></i> Intensitas Kinerja (30 Hari)
                 </h3>
-                <div class="flex flex-wrap gap-1.5" id="heatmap">
-                    <!-- Javascript will populate this -->
-                </div>
-                <div class="flex items-center gap-2 mt-2 text-xs text-slate-400">
-                    <span>Sedikit</span>
-                    <div class="w-3 h-3 bg-slate-200 rounded-sm"></div>
-                    <div class="w-3 h-3 bg-brand-300 rounded-sm"></div>
-                    <div class="w-3 h-3 bg-brand-500 rounded-sm"></div>
-                    <div class="w-3 h-3 bg-brand-700 rounded-sm"></div>
-                    <span>Padat</span>
-                </div>
+                <div class="flex flex-wrap gap-1.5" id="heatmap"></div>
             </div>
         </div>
     </div>
 
-    <!-- RIGHT PANEL: Task Management -->
     <div class="w-full md:w-1/3 h-full bg-slate-50 flex flex-col relative">
-        <!-- Auth Section -->
         <div id="auth-section" class="p-6 bg-blue-50 border-b border-blue-200">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="text-sm font-bold text-blue-900">Google Drive Sync</h3>
-                <span id="user-name" class="text-xs text-blue-700 font-medium hidden"></span>
+            <h3 class="text-sm font-bold text-blue-900 mb-4">🔐 Masuk dengan Google</h3>
+            <div id="g_id_onload" 
+                 data-client_id="691342255763-c2ehv986h2tnt71sc0c4fh7djce3pkav.apps.googleusercontent.com"
+                 data-callback="handleCredentialResponse">
             </div>
-            <button id="google-signin-btn" onclick="handleSignIn()" class="w-full bg-white border border-gray-300 text-gray-700 font-medium py-2 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth_providers/google.svg" alt="Google" class="w-4 h-4">
-                Login dengan Google
-            </button>
-            <button id="google-signout-btn" onclick="handleSignOut()" class="w-full bg-red-100 text-red-700 font-medium py-2 rounded-lg hover:bg-red-200 transition-colors text-sm hidden">
-                Logout
-            </button>
-            <p class="text-xs text-blue-600 mt-2">Data Anda akan tersinkronisasi otomatis ke Google Drive</p>
+            <p class="text-xs text-blue-600 mt-3">Data akan tersimpan otomatis di browser Anda</p>
         </div>
 
-        <!-- Input Form -->
         <div id="task-form" class="p-6 bg-white border-b border-slate-200 shadow-sm z-10 hidden">
             <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <i class="ph-fill ph-plus-circle text-brand-500"></i> Manajemen Tugas
+                <i class="ph-fill ph-plus-circle text-brand-500"></i> Tambah Tugas
             </h3>
             <div class="space-y-3">
                 <input type="text" id="task-title" placeholder="Judul Tugas..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
-                
-                <textarea id="task-desc" placeholder="Keterangan / Catatan spesifik..." rows="2" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 resize-none"></textarea>
-                
+                <textarea id="task-desc" placeholder="Keterangan..." rows="2" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 resize-none"></textarea>
                 <div class="flex gap-2">
                     <select id="task-priority" class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none text-sm">
-                        <option value="high">🔴 Mendesak & Penting</option>
+                        <option value="high">🔴 Mendesak</option>
                         <option value="medium">🟡 Penting</option>
                         <option value="low">🔵 Kasual</option>
                         <option value="routine">🟢 Rutinitas</option>
                     </select>
                     <input type="date" id="task-date" class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none text-sm">
                 </div>
-                <button onclick="handleAddTask()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm">
+                <button onclick="handleAddTask()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm">
                     <i class="ph-bold ph-paper-plane-right"></i> Tambahkan
                 </button>
             </div>
         </div>
 
-        <!-- Task List Header -->
         <div id="task-header" class="px-6 py-4 flex items-center justify-between hidden">
-            <h3 class="font-bold text-slate-700">Daftar Pekerjaan</h3>
-            <span class="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded">Auto Sync</span>
+            <h3 class="font-bold text-slate-700">Daftar Tugas</h3>
         </div>
 
-        <!-- Task List Items -->
-        <div id="task-list" class="flex-1 overflow-y-auto px-6 pb-6 space-y-3 no-scrollbar">
-            <!-- Javascript will populate this -->
-        </div>
+        <div id="task-list" class="flex-1 overflow-y-auto px-6 pb-6 space-y-3 no-scrollbar"></div>
     </div>
 
     <!-- MODALS -->
-
-    <!-- 1. Routine Modal -->
     <div id="routine-modal" class="fixed inset-0 glass-modal z-50 hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-xl w-[90%] max-w-md p-6 transform scale-95 transition-transform duration-300" id="routine-modal-content">
             <div class="text-center mb-6">
@@ -216,198 +123,150 @@
                     <i class="ph-fill ph-arrows-clockwise text-3xl text-green-600"></i>
                 </div>
                 <h3 class="text-xl font-bold text-slate-800">Atur Rutinitas</h3>
-                <p class="text-sm text-slate-500 mt-2">Tugas ini ditandai sebagai rutinitas. Seberapa sering sistem harus menjadwalkannya secara otomatis?</p>
             </div>
-            <div class="space-y-3">
-                <button onclick="saveRoutineTask('weekly')" class="w-full p-4 border border-slate-200 rounded-xl hover:border-brand-500 hover:bg-brand-50 text-left transition-all flex items-center justify-between group">
-                    <div>
-                        <div class="font-bold text-slate-700 group-hover:text-brand-700">Setiap Minggu</div>
-                        <div class="text-xs text-slate-500">Otomatis terjadwal di hari yang sama tiap minggunya</div>
-                    </div>
-                    <i class="ph-bold ph-calendar-check text-brand-500 text-xl"></i>
+            <div class="space-y-2">
+                <button onclick="saveRoutineTask('weekly')" class="w-full p-3 border border-slate-200 rounded-lg hover:bg-blue-50 text-left text-sm font-medium">
+                    Setiap Minggu
                 </button>
-                <button onclick="saveRoutineTask('monthly')" class="w-full p-4 border border-slate-200 rounded-xl hover:border-brand-500 hover:bg-brand-50 text-left transition-all flex items-center justify-between group">
-                    <div>
-                        <div class="font-bold text-slate-700 group-hover:text-brand-700">Setiap Bulan</div>
-                        <div class="text-xs text-slate-500">Otomatis terjadwal di tanggal yang sama tiap bulannya</div>
-                    </div>
-                    <i class="ph-bold ph-calendar text-brand-500 text-xl"></i>
+                <button onclick="saveRoutineTask('monthly')" class="w-full p-3 border border-slate-200 rounded-lg hover:bg-blue-50 text-left text-sm font-medium">
+                    Setiap Bulan
                 </button>
-                <button onclick="saveRoutineTask('none')" class="w-full p-3 text-center text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors">
-                    Hanya Sekali (Jangan diulang)
+                <button onclick="saveRoutineTask('none')" class="w-full p-3 text-slate-500 text-sm font-medium">
+                    Hanya Sekali
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- 2. Day Details Modal -->
     <div id="day-modal" class="fixed inset-0 glass-modal z-50 hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-xl w-[90%] max-w-lg flex flex-col max-h-[80vh] transform scale-95 transition-transform duration-300" id="day-modal-content">
-            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
-                <div>
-                    <h3 class="font-bold text-lg text-slate-800" id="day-modal-title">Detail Hari</h3>
-                    <p class="text-xs text-slate-500" id="day-modal-subtitle">Daftar Pekerjaan</p>
-                </div>
-                <button onclick="closeDayModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-500 transition-colors">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-lg text-slate-800" id="day-modal-title">Detail Hari</h3>
+                <button onclick="closeDayModal()" class="p-1 hover:bg-slate-200 rounded text-slate-500">
                     <i class="ph-bold ph-x"></i>
                 </button>
             </div>
-            <div class="p-5 overflow-y-auto flex-1 space-y-3" id="day-modal-tasks">
-                <!-- Javascript will populate this -->
-            </div>
+            <div class="p-4 overflow-y-auto flex-1 space-y-2" id="day-modal-tasks"></div>
         </div>
     </div>
 
     <script>
-        // === GOOGLE DRIVE + LOCAL STORAGE ===
         const STORAGE_KEY = 'workspace-dilly-tasks';
-        const CLIENT_ID = '691342255763-c2ehv986h2tnt71sc0c4fh7djce3pkav.apps.googleusercontent.com'; // sudah benar
-        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-        
         let tasks = [];
         let realToday = new Date();
         let currentDate = new Date(realToday.getFullYear(), realToday.getMonth(), realToday.getDate());
         let pendingRoutineTask = null;
         let isLoggedIn = false;
-        let driveFileId = null;
-
-        // --- Initialize Google Sign-In ---
-        function initializeGoogleSignIn() {
-            if (CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID') {
-                console.warn('⚠️ Google Client ID belum dikonfigurasi. Gunakan mode Local Storage saja.');
-                showLocalStorageMode();
-                return;
-            }
-
-            google.accounts.id.initialize({
-                client_id: CLIENT_ID,
-                callback: handleCredentialResponse
-            });
-
-            google.accounts.id.renderButton(
-                document.getElementById('google-signin-btn'),
-                { theme: 'outline', size: 'large' }
-            );
-        }
 
         function handleCredentialResponse(response) {
-            console.log('Google Sign-In berhasil:', response);
+            console.log('✅ Login berhasil!');
             isLoggedIn = true;
             updateAuthUI();
-            loadTasksFromDrive();
-        }
-
-        function handleSignIn() {
-            google.accounts.id.prompt();
-        }
-
-        function handleSignOut() {
-            isLoggedIn = false;
-            driveFileId = null;
-            updateAuthUI();
+            loadTasks();
             updateDashboard();
         }
 
         function updateAuthUI() {
-            const signinBtn = document.getElementById('google-signin-btn');
-            const signoutBtn = document.getElementById('google-signout-btn');
+            const authSection = document.getElementById('auth-section');
             const taskForm = document.getElementById('task-form');
             const taskHeader = document.getElementById('task-header');
-            const authSection = document.getElementById('auth-section');
 
             if (isLoggedIn) {
-                signinBtn.classList.add('hidden');
-                signoutBtn.classList.remove('hidden');
+                authSection.classList.add('hidden');
                 taskForm.classList.remove('hidden');
                 taskHeader.classList.remove('hidden');
-                authSection.classList.add('hidden');
             } else {
-                signinBtn.classList.remove('hidden');
-                signoutBtn.classList.add('hidden');
+                authSection.classList.remove('hidden');
                 taskForm.classList.add('hidden');
                 taskHeader.classList.add('hidden');
-                authSection.classList.remove('hidden');
             }
         }
 
-        function showLocalStorageMode() {
-            // Jika Google Drive tidak tersedia, gunakan Local Storage
-            loadTasks();
-            isLoggedIn = true;
-            updateAuthUI();
-            updateDashboard();
-        }
-
-        // --- Load Data ---
         function loadTasks() {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 try {
                     tasks = JSON.parse(saved);
-                    console.log(`✅ Dimuat ${tasks.length} tugas`);
                 } catch (e) {
-                    console.error("Error memuat data:", e);
                     tasks = [];
                 }
             }
         }
 
-        function loadTasksFromDrive() {
-            // Implementasi lengkap akan ditambahkan nanti
-            loadTasks();
+        function saveTasks() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+        }
+
+        window.changeMonth = (delta) => {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            updateDashboard();
+        };
+
+        window.handleAddTask = () => {
+            const title = document.getElementById('task-title').value.trim();
+            const desc = document.getElementById('task-desc').value.trim();
+            const priority = document.getElementById('task-priority').value;
+            const date = document.getElementById('task-date').value;
+
+            if (!title || !date) return;
+
+            const newTask = {
+                id: Date.now(),
+                title, desc, priority, date,
+                completed: false,
+                recurrence: 'none'
+            };
+
+            if (priority === 'routine') {
+                pendingRoutineTask = newTask;
+                showModal('routine-modal');
+            } else {
+                tasks.push(newTask);
+                finishAddingTask();
+            }
+        };
+
+        window.saveRoutineTask = (recurrenceType) => {
+            if (!pendingRoutineTask) return;
+            pendingRoutineTask.recurrence = recurrenceType;
+            const baseDate = new Date(pendingRoutineTask.date);
+            
+            tasks.push({...pendingRoutineTask});
+            
+            if (recurrenceType === 'weekly') {
+                for (let i = 1; i <= 52; i++) {
+                    const nextDate = new Date(baseDate);
+                    nextDate.setDate(nextDate.getDate() + 7 * i);
+                    tasks.push({
+                        ...pendingRoutineTask,
+                        id: Date.now() + i,
+                        date: formatDateForInput(nextDate)
+                    });
+                }
+            } else if (recurrenceType === 'monthly') {
+                for (let i = 1; i <= 12; i++) {
+                    const nextDate = new Date(baseDate);
+                    nextDate.setMonth(nextDate.getMonth() + i);
+                    tasks.push({
+                        ...pendingRoutineTask,
+                        id: Date.now() + i,
+                        date: formatDateForInput(nextDate)
+                    });
+                }
+            }
+            
+            hideModal('routine-modal');
+            pendingRoutineTask = null;
+            finishAddingTask();
+        };
+
+        function finishAddingTask() {
+            document.getElementById('task-title').value = '';
+            document.getElementById('task-desc').value = '';
+            saveTasks();
             updateDashboard();
         }
 
-        // --- Save Data ---
-        function saveTasks() {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-                updateSyncStatus('success');
-                saveTasksToDrive();
-            } catch (e) {
-                console.error("Error menyimpan data:", e);
-                updateSyncStatus('error');
-            }
-        }
-
-        function saveTasksToDrive() {
-            // Implementasi Google Drive save akan ditambahkan nanti
-            // Untuk sekarang, hanya menggunakan Local Storage
-        }
-
-        function updateSyncStatus(status) {
-            const statusEl = document.getElementById('sync-status');
-            statusEl.classList.remove('hidden', 'sync-syncing', 'sync-success', 'sync-error');
-            
-            if (status === 'syncing') {
-                statusEl.classList.add('sync-syncing');
-                statusEl.innerHTML = '<i class="ph-bold ph-arrows-clockwise"></i> <span>Menyinkronisasi...</span>';
-            } else if (status === 'success') {
-                statusEl.classList.add('sync-success');
-                statusEl.innerHTML = '<i class="ph-bold ph-check-circle"></i> <span>Tersinkronisasi</span>';
-                setTimeout(() => statusEl.classList.add('hidden'), 3000);
-            } else if (status === 'error') {
-                statusEl.classList.add('sync-error');
-                statusEl.innerHTML = '<i class="ph-bold ph-warning-circle"></i> <span>Gagal sinkronisasi</span>';
-            }
-        }
-
-        // --- Expose Fungsi ke Global ---
-        window.changeMonth = changeMonth;
-        window.handleAddTask = handleAddTask;
-        window.saveRoutineTask = saveRoutineTask;
-        window.closeDayModal = closeDayModal;
-        window.handleSignIn = handleSignIn;
-        window.handleSignOut = handleSignOut;
-
-        // Inisialisasi
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('task-date').value = formatDateForInput(realToday);
-            initializeGoogleSignIn();
-            showLocalStorageMode(); // Fallback ke Local Storage dulu
-        });
-
-        // --- Helper Functions ---
         function formatDateForInput(dateObj) {
             const y = dateObj.getFullYear();
             const m = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -423,203 +282,68 @@
 
         function getPriorityConfig(priority) {
             const configs = {
-                'high': { color: 'bg-rose-100 text-rose-700 border-rose-200', icon: '🔴', label: 'Mendesak' },
-                'medium': { color: 'bg-amber-100 text-amber-700 border-amber-200', icon: '🟡', label: 'Penting' },
-                'low': { color: 'bg-blue-100 text-blue-700 border-blue-200', icon: '🔵', label: 'Kasual' },
-                'routine': { color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: '🟢', label: 'Rutinitas' }
+                'high': { color: 'bg-rose-100 text-rose-700 border-rose-200', label: 'Mendesak' },
+                'medium': { color: 'bg-amber-100 text-amber-700 border-amber-200', label: 'Penting' },
+                'low': { color: 'bg-blue-100 text-blue-700 border-blue-200', label: 'Kasual' },
+                'routine': { color: 'bg-emerald-100 text-emerald-700 border-emerald-200', label: 'Rutinitas' }
             };
             return configs[priority] || configs['low'];
         }
 
-        // --- Master Render Function ---
         function updateDashboard() {
             renderCalendar();
             renderTasks();
             generateHeatmap();
         }
 
-        // --- Feature: Calendar ---
-        function changeMonth(delta) {
-            currentDate.setMonth(currentDate.getMonth() + delta);
-            updateDashboard();
-        }
-
         function renderCalendar() {
             const monthDisplay = document.getElementById('current-month-display');
             const calendarBody = document.getElementById('calendar-body');
-            
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
-            
             const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            
             monthDisplay.textContent = `${monthNames[month]} ${year}`;
-
             calendarBody.innerHTML = '';
 
             const firstDayOfMonth = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
 
             for (let i = 0; i < firstDayOfMonth; i++) {
-                const emptyCell = document.createElement('div');
-                emptyCell.className = 'bg-transparent p-1';
-                calendarBody.appendChild(emptyCell);
+                calendarBody.appendChild(document.createElement('div'));
             }
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const cellDate = new Date(year, month, day);
                 const cellDateStr = formatDateForInput(cellDate);
-                
                 const isToday = isSameDay(cellDate, realToday);
                 const dayTasks = tasks.filter(t => t.date === cellDateStr);
-                const hasTasks = dayTasks.length > 0;
 
                 const cell = document.createElement('div');
-                cell.className = `rounded-lg p-2 border relative group flex flex-col overflow-hidden transition-all shadow-sm ${isToday ? 'border-brand-500 bg-brand-50/50' : 'border-slate-100 bg-white'}`;
+                cell.className = `rounded-lg p-2 border flex flex-col overflow-hidden transition-all shadow-sm cursor-pointer hover:shadow-md ${isToday ? 'border-brand-500 bg-brand-50' : 'border-slate-200 bg-white'}`;
                 
-                if (hasTasks) {
-                    cell.classList.add('cursor-pointer');
-                    cell.onclick = (e) => {
-                        if(e.target.closest('.delete-day-btn')) return; 
-                        openDayModal(cellDateStr, dayTasks);
-                    };
+                if (dayTasks.length > 0) {
+                    cell.onclick = () => openDayModal(cellDateStr, dayTasks);
                 }
 
-                const cellHeader = document.createElement('div');
-                cellHeader.className = 'flex justify-between items-start mb-1';
-                
-                const dateNum = document.createElement('span');
-                dateNum.className = `text-sm font-medium ${isToday ? 'text-brand-600 font-bold' : (cellDate.getDay() === 0 ? 'text-rose-500' : 'text-slate-600')}`;
+                const dateNum = document.createElement('div');
+                dateNum.className = `text-sm font-medium ${isToday ? 'text-brand-600 font-bold' : 'text-slate-600'}`;
                 dateNum.textContent = day;
-                cellHeader.appendChild(dateNum);
+                cell.appendChild(dateNum);
 
-                if (hasTasks) {
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'delete-day-btn opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 transition-all text-xs flex items-center justify-center p-1 rounded hover:bg-rose-50';
-                    deleteBtn.innerHTML = '<i class="ph-bold ph-trash"></i>';
-                    
-                    let deleteState = 0;
-                    deleteBtn.onclick = (e) => {
-                        e.stopPropagation(); 
-                        if (deleteState === 0) {
-                            deleteBtn.innerHTML = '<span class="font-bold">Yakin?</span>';
-                            deleteBtn.classList.replace('text-slate-400', 'text-rose-500');
-                            deleteBtn.classList.add('bg-rose-100');
-                            deleteState = 1;
-                            
-                            setTimeout(() => {
-                                if(deleteState === 1) {
-                                    deleteBtn.innerHTML = '<i class="ph-bold ph-trash"></i>';
-                                    deleteBtn.classList.replace('text-rose-500', 'text-slate-400');
-                                    deleteBtn.classList.remove('bg-rose-100');
-                                    deleteState = 0;
-                                }
-                            }, 3000);
-                        } else {
-                            clearDayTasks(cellDateStr);
-                        }
-                    };
-                    cellHeader.appendChild(deleteBtn);
-                }
-                
-                cell.appendChild(cellHeader);
-
-                const indicatorContainer = document.createElement('div');
-                indicatorContainer.className = 'flex-1 flex flex-col gap-1 overflow-y-auto no-scrollbar';
-
+                const taskList = document.createElement('div');
+                taskList.className = 'flex-1 flex flex-col gap-1 overflow-y-auto text-[10px]';
                 dayTasks.forEach(task => {
                     const conf = getPriorityConfig(task.priority);
                     const indicator = document.createElement('div');
-                    indicator.className = `text-[10px] md:text-xs truncate px-1.5 py-0.5 rounded border ${conf.color} ${task.completed ? 'opacity-50 line-through' : ''}`;
-                    
-                    let recIcon = '';
-                    if(task.recurrence === 'weekly') recIcon = '🔄';
-                    if(task.recurrence === 'monthly') recIcon = '🔁';
-                    
-                    indicator.textContent = `${task.title} ${recIcon}`;
-                    indicatorContainer.appendChild(indicator);
+                    indicator.className = `truncate px-1.5 py-0.5 rounded border ${conf.color} ${task.completed ? 'opacity-50 line-through' : ''}`;
+                    indicator.textContent = task.title;
+                    taskList.appendChild(indicator);
                 });
+                cell.appendChild(taskList);
 
-                cell.appendChild(indicatorContainer);
                 calendarBody.appendChild(cell);
             }
-        }
-
-        // --- Feature: Task Management ---
-        function handleAddTask() {
-            const title = document.getElementById('task-title').value.trim();
-            const desc = document.getElementById('task-desc').value.trim();
-            const priority = document.getElementById('task-priority').value;
-            const date = document.getElementById('task-date').value;
-
-            if (!title || !date) {
-                const titleEl = document.getElementById('task-title');
-                titleEl.classList.add('border-rose-500', 'animate-pulse');
-                setTimeout(() => titleEl.classList.remove('border-rose-500', 'animate-pulse'), 1000);
-                return;
-            }
-
-            const newTask = {
-                id: Date.now(),
-                title,
-                desc,
-                priority,
-                date,
-                completed: false,
-                recurrence: 'none'
-            };
-
-            if (priority === 'routine') {
-                pendingRoutineTask = newTask;
-                showModal('routine-modal');
-            } else {
-                tasks.push(newTask);
-                finishAddingTask();
-            }
-        }
-
-        function saveRoutineTask(recurrenceType) {
-            if (!pendingRoutineTask) return;
-            
-            pendingRoutineTask.recurrence = recurrenceType;
-            const baseDate = new Date(pendingRoutineTask.date);
-            
-            const originalTask = {...pendingRoutineTask};
-            tasks.push(originalTask);
-            
-            if (recurrenceType === 'weekly') {
-                for (let i = 1; i <= 52; i++) { 
-                    const nextDate = new Date(baseDate);
-                    nextDate.setDate(nextDate.getDate() + (7 * i));
-                    const newT = {
-                        ...pendingRoutineTask,
-                        id: Date.now() + i,
-                        date: formatDateForInput(nextDate)
-                    };
-                    tasks.push(newT);
-                }
-            } else if (recurrenceType === 'monthly') {
-                for (let i = 1; i <= 12; i++) { 
-                    const nextDate = new Date(baseDate);
-                    nextDate.setMonth(nextDate.getMonth() + i);
-                    const newT = {
-                        ...pendingRoutineTask,
-                        id: Date.now() + i,
-                        date: formatDateForInput(nextDate)
-                    };
-                    tasks.push(newT);
-                }
-            }
-            
-            hideModal('routine-modal');
-            pendingRoutineTask = null;
-            finishAddingTask();
-        }
-
-        function finishAddingTask() {
-            document.getElementById('task-title').value = '';
-            document.getElementById('task-desc').value = '';
-            saveTasks();
-            updateDashboard();
         }
 
         function renderTasks() {
@@ -632,189 +356,118 @@
             });
 
             if (sortedTasks.length === 0) {
-                list.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-40 text-slate-400 text-center">
-                        <i class="ph ph-coffee text-4xl mb-2"></i>
-                        <p class="text-sm">Belum ada pekerjaan.<br>Semua terkendali.</p>
-                    </div>`;
+                list.innerHTML = '<div class="flex flex-col items-center justify-center h-40 text-slate-400 text-center"><i class="ph ph-coffee text-4xl mb-2"></i><p class="text-sm">Belum ada tugas</p></div>';
                 return;
             }
 
             sortedTasks.forEach(task => {
                 const conf = getPriorityConfig(task.priority);
-                const isLate = !task.completed && (new Date(task.date) < realToday) && !isSameDay(new Date(task.date), realToday);
-                
                 const tDate = new Date(task.date);
                 const dateStr = isSameDay(tDate, realToday) ? 'Hari Ini' : tDate.toLocaleDateString('id-ID', {day: 'numeric', month:'short'});
 
                 const item = document.createElement('div');
-                item.className = `task-list-enter p-4 rounded-xl border bg-white shadow-sm flex gap-3 transition-all ${task.completed ? 'opacity-60 border-slate-200' : (isLate ? 'border-rose-300 bg-rose-50/30' : 'border-slate-200')}`;
+                item.className = `task-list-enter p-3 rounded-lg border bg-white shadow-sm flex gap-2 transition-all ${task.completed ? 'opacity-60' : ''}`;
                 
                 const checkBtn = document.createElement('button');
-                checkBtn.onclick = () => toggleTaskStatus(task.id);
-                checkBtn.className = `mt-1 w-5 h-5 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors ${task.completed ? 'bg-brand-500 border-brand-500 text-white' : 'border-slate-300 hover:border-brand-500'}`;
-                checkBtn.innerHTML = '<i class="ph-bold ph-check text-xs"></i>';
+                checkBtn.onclick = () => {
+                    task.completed = !task.completed;
+                    saveTasks();
+                    updateDashboard();
+                };
+                checkBtn.className = `mt-0.5 w-5 h-5 shrink-0 rounded-full border-2 flex items-center justify-center text-xs transition-colors ${task.completed ? 'bg-brand-500 border-brand-500 text-white' : 'border-slate-300'}`;
+                checkBtn.innerHTML = '<i class="ph-bold ph-check"></i>';
 
                 const content = document.createElement('div');
                 content.className = 'flex-1 min-w-0';
-                
-                const titleWrap = document.createElement('div');
-                titleWrap.className = 'flex justify-between items-start mb-1';
-                
-                const title = document.createElement('h4');
-                title.className = `font-bold text-sm truncate pr-2 ${task.completed ? 'line-through text-slate-500' : 'text-slate-800'}`;
-                title.textContent = task.title;
-                
-                let recBadge = '';
-                if(task.recurrence === 'weekly') recBadge = '<span class="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full whitespace-nowrap"><i class="ph-bold ph-arrows-clockwise"></i> Mingguan</span>';
-                if(task.recurrence === 'monthly') recBadge = '<span class="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full whitespace-nowrap"><i class="ph-bold ph-arrows-clockwise"></i> Bulanan</span>';
-
-                titleWrap.innerHTML = `<div>${title.outerHTML}</div><div class="flex gap-1 items-center shrink-0">${recBadge}</div>`;
-                
-                let descHtml = '';
-                if (task.desc) {
-                    descHtml = `<p class="text-xs text-slate-500 mb-2 truncate">${task.desc}</p>`;
-                }
-
-                const meta = document.createElement('div');
-                meta.className = 'flex gap-2 items-center text-[10px] font-medium mt-1';
-                meta.innerHTML = `
-                    <span class="${conf.color} px-2 py-0.5 rounded">${conf.label}</span>
-                    <span class="${isLate ? 'text-rose-600 font-bold bg-rose-50 px-1 rounded' : 'text-slate-500'} flex items-center gap-1">
-                        <i class="ph-bold ph-calendar-blank"></i> ${dateStr}
-                    </span>
+                content.innerHTML = `
+                    <h4 class="font-bold text-sm ${task.completed ? 'line-through text-slate-500' : 'text-slate-800'}">${task.title}</h4>
+                    ${task.desc ? `<p class="text-xs text-slate-500">${task.desc}</p>` : ''}
+                    <div class="flex gap-1 items-center text-[10px] mt-1">
+                        <span class="${conf.color} px-1.5 py-0.5 rounded">${conf.label}</span>
+                        <span class="text-slate-500">${dateStr}</span>
+                    </div>
                 `;
 
-                content.appendChild(titleWrap);
-                if (descHtml) content.insertAdjacentHTML('beforeend', descHtml);
-                content.appendChild(meta);
-
                 const delBtn = document.createElement('button');
-                delBtn.onclick = () => deleteSingleTask(task.id);
-                delBtn.className = 'w-6 h-6 shrink-0 rounded flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors';
+                delBtn.onclick = () => {
+                    tasks = tasks.filter(t => t.id !== task.id);
+                    saveTasks();
+                    updateDashboard();
+                };
+                delBtn.className = 'w-6 h-6 shrink-0 rounded flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 text-xs';
                 delBtn.innerHTML = '<i class="ph-bold ph-trash"></i>';
 
                 item.appendChild(checkBtn);
                 item.appendChild(content);
                 item.appendChild(delBtn);
-                
                 list.appendChild(item);
             });
         }
 
-        // --- Data Manipulation ---
-        function toggleTaskStatus(id) {
-            const task = tasks.find(t => t.id === id);
-            if (task) {
-                task.completed = !task.completed;
-                saveTasks();
-                updateDashboard();
-            }
-        }
-
-        function deleteSingleTask(id) {
-            tasks = tasks.filter(t => t.id !== id);
-            saveTasks();
-            updateDashboard();
-        }
-
-        function clearDayTasks(dateStr) {
-            tasks = tasks.filter(t => t.date !== dateStr);
-            saveTasks();
-            updateDashboard();
-            hideModal('day-modal');
-        }
-
-        // --- Feature: Heatmap (Intensitas) ---
         function generateHeatmap() {
             const heatmap = document.getElementById('heatmap');
-            if (!heatmap) return;
-            heatmap.innerHTML = ''; 
-
+            heatmap.innerHTML = '';
             const taskCounts = {};
             tasks.forEach(task => {
-                if (task.completed) {
-                    taskCounts[task.date] = (taskCounts[task.date] || 0) + 1;
-                }
+                if (task.completed) taskCounts[task.date] = (taskCounts[task.date] || 0) + 1;
             });
 
             for (let i = 29; i >= 0; i--) {
-                const d = new Date(realToday.getFullYear(), realToday.getMonth(), realToday.getDate());
+                const d = new Date(realToday);
                 d.setDate(d.getDate() - i);
-                
                 const dateStr = formatDateForInput(d);
                 const count = taskCounts[dateStr] || 0;
-
                 const block = document.createElement('div');
-                block.className = 'w-3.5 h-3.5 md:w-4 md:h-4 rounded-sm transition-all duration-300 cursor-help hover:scale-125 hover:shadow-sm';
-                
+                block.className = 'w-3 h-3 rounded-sm';
                 if (count === 0) block.classList.add('bg-slate-200');
                 else if (count === 1) block.classList.add('bg-brand-300');
                 else if (count === 2) block.classList.add('bg-brand-500');
                 else block.classList.add('bg-brand-700');
-
-                const dateIndo = d.toLocaleDateString('id-ID', {day: 'numeric', month:'short'});
-                block.title = count === 0 
-                    ? `Tidak ada tugas selesai pada ${dateIndo}` 
-                    : `${count} tugas diselesaikan pada ${dateIndo}`;
-                
                 heatmap.appendChild(block);
             }
         }
 
-        // --- Feature: Modals ---
         function showModal(id) {
             const modal = document.getElementById(id);
-            const content = document.getElementById(`${id}-content`);
             modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                content.classList.remove('scale-95');
-            }, 10);
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
         }
 
         function hideModal(id) {
             const modal = document.getElementById(id);
-            const content = document.getElementById(`${id}-content`);
             modal.classList.add('opacity-0');
-            content.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
+            setTimeout(() => modal.classList.add('hidden'), 300);
         }
+
+        window.closeDayModal = () => hideModal('day-modal');
 
         function openDayModal(dateStr, dayTasks) {
             const d = new Date(dateStr);
-            document.getElementById('day-modal-title').textContent = d.toLocaleDateString('id-ID', {weekday: 'long', day: 'numeric', month:'long', year:'numeric'});
-            
+            document.getElementById('day-modal-title').textContent = d.toLocaleDateString('id-ID', {weekday: 'long', day: 'numeric', month:'long'});
             const list = document.getElementById('day-modal-tasks');
             list.innerHTML = '';
-            
             dayTasks.forEach(task => {
                 const conf = getPriorityConfig(task.priority);
                 const item = document.createElement('div');
-                item.className = 'p-3 rounded-lg border border-slate-200 bg-white flex justify-between items-start shadow-sm';
-                
-                let descStr = task.desc ? `<p class="text-xs text-slate-500 mt-1">${task.desc}</p>` : '';
-                
-                item.innerHTML = `
-                    <div class="pr-4">
-                        <div class="flex items-center gap-2">
-                            <span class="${task.completed ? 'line-through text-slate-400' : 'font-bold text-slate-700'}">${task.title}</span>
-                            <span class="${conf.color} text-[10px] px-1.5 py-0.5 rounded">${conf.label}</span>
-                        </div>
-                        ${descStr}
-                    </div>
-                `;
+                item.className = 'p-2 rounded border border-slate-200 bg-white text-sm';
+                item.innerHTML = `<strong class="${task.completed ? 'line-through' : ''}">${task.title}</strong><br><span class="text-xs ${conf.color} rounded px-1">${conf.label}</span>`;
                 list.appendChild(item);
             });
-            
             showModal('day-modal');
         }
 
-        function closeDayModal() {
-            hideModal('day-modal');
-        }
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('task-date').value = formatDateForInput(realToday);
+            loadTasks();
+            updateDashboard();
+        });
+
+        window.addEventListener('load', () => {
+            google.accounts.id.renderButton(
+                document.getElementById('g_id_onload'),
+                { theme: 'outline', size: 'large', text: 'signin_with' }
+            );
+        });
 
     </script>
 </body>
