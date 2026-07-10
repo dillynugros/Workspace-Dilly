@@ -115,6 +115,7 @@
         <div id="task-list" class="flex-1 overflow-y-auto px-6 pb-6 space-y-3 no-scrollbar"></div>
     </div>
 
+    <!-- MODALS -->
     <div id="routine-modal" class="fixed inset-0 glass-modal z-50 hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-xl w-[90%] max-w-md p-6 transform scale-95 transition-transform duration-300" id="routine-modal-content">
             <div class="text-center mb-6">
@@ -145,7 +146,8 @@
                     <i class="ph-bold ph-x"></i>
                 </button>
             </div>
-            <div class="p-4 overflow-y-auto flex-1 space-y-2" id="day-modal-tasks"></div>
+            <!-- Mengubah style container agar jarak antar tugas sedikit lebih renggang -->
+            <div class="p-4 overflow-y-auto flex-1 space-y-3" id="day-modal-tasks"></div>
         </div>
     </div>
 
@@ -321,24 +323,19 @@
                 const cell = document.createElement('div');
                 cell.className = `group relative rounded-lg p-2 border flex flex-col overflow-hidden transition-all shadow-sm cursor-pointer hover:shadow-md ${isToday ? 'border-brand-500 bg-brand-50' : 'border-slate-200 bg-white'}`;
                 
-                // --- INTEGRASI BARU: Event Click pada Seluruh Kotak Kalender ---
                 cell.onclick = () => {
-                    // 1. Mengubah value form input tanggal
                     const taskDateInput = document.getElementById('task-date');
                     if (taskDateInput) {
                         taskDateInput.value = cellDateStr;
                         
-                        // Memberikan efek kedipan (flash) pada form input agar Anda sadar datanya berubah
                         taskDateInput.classList.add('ring-2', 'ring-brand-500', 'bg-brand-50');
                         setTimeout(() => {
                             taskDateInput.classList.remove('ring-2', 'ring-brand-500', 'bg-brand-50');
-                        }, 400); // efek hilang dalam 0.4 detik
+                        }, 400);
                         
-                        // Opsional: Fokuskan kursor ke judul tugas setelah klik tanggal
                         document.getElementById('task-title').focus();
                     }
 
-                    // 2. Membuka modal detail hari jika di hari tersebut sudah ada tugas
                     if (dayTasks.length > 0) {
                         openDayModal(cellDateStr, dayTasks);
                     }
@@ -358,7 +355,7 @@
                     let resetTimeout = null;
 
                     clearBtn.onclick = (e) => {
-                        e.stopPropagation(); // Mencegah form tanggal ikut berubah & modal tidak terbuka saat sedang hapus tugas
+                        e.stopPropagation(); 
                         clickCount++;
 
                         if (clickCount === 1) {
@@ -490,20 +487,36 @@
 
         window.closeDayModal = () => hideModal('day-modal');
 
+        // --- PEMBARUAN: Modifikasi Fungsi openDayModal untuk menampilkan Detail Keterangan Tugas ---
         function openDayModal(dateStr, dayTasks) {
             const d = new Date(dateStr);
             document.getElementById('day-modal-title').textContent = d.toLocaleDateString('id-ID', {weekday: 'long', day: 'numeric', month:'long'});
             const list = document.getElementById('day-modal-tasks');
             list.innerHTML = '';
+            
             dayTasks.forEach(task => {
                 const conf = getPriorityConfig(task.priority);
                 const item = document.createElement('div');
-                item.className = 'p-2 rounded border border-slate-200 bg-white text-sm';
-                item.innerHTML = `<strong class="${task.completed ? 'line-through' : ''}">${task.title}</strong><br><span class="text-xs ${conf.color} rounded px-1">${conf.label}</span>`;
+                
+                // Menyesuaikan padding dan layout agar lebih rapi menampung keterangan tugas
+                item.className = 'p-3 rounded-lg border border-slate-200 bg-white flex flex-col gap-1 shadow-sm';
+                
+                // Cek apakah task.desc (Keterangan) ada atau tidak. Jika ada, buat elemen paragraph.
+                const descHtml = task.desc ? `<p class="text-xs text-slate-500 mt-1">${task.desc}</p>` : '';
+                
+                item.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <strong class="text-sm leading-tight ${task.completed ? 'line-through text-slate-400' : 'text-slate-800'}">${task.title}</strong>
+                        <span class="shrink-0 text-[10px] font-medium ${conf.color} rounded px-1.5 py-0.5">${conf.label}</span>
+                    </div>
+                    ${descHtml}
+                `;
+                
                 list.appendChild(item);
             });
             showModal('day-modal');
         }
+        // --- AKHIR PEMBARUAN ---
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('task-date').value = formatDateForInput(realToday);
