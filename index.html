@@ -115,7 +115,6 @@
         <div id="task-list" class="flex-1 overflow-y-auto px-6 pb-6 space-y-3 no-scrollbar"></div>
     </div>
 
-    <!-- MODALS -->
     <div id="routine-modal" class="fixed inset-0 glass-modal z-50 hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-xl w-[90%] max-w-md p-6 transform scale-95 transition-transform duration-300" id="routine-modal-content">
             <div class="text-center mb-6">
@@ -319,8 +318,9 @@
                 const isToday = isSameDay(cellDate, realToday);
                 const dayTasks = tasks.filter(t => t.date === cellDateStr);
 
+                // Menambahkan 'group relative' ke dalam kontainer tanggal agar element absolute di dalamnya merespon hover group
                 const cell = document.createElement('div');
-                cell.className = `rounded-lg p-2 border flex flex-col overflow-hidden transition-all shadow-sm cursor-pointer hover:shadow-md ${isToday ? 'border-brand-500 bg-brand-50' : 'border-slate-200 bg-white'}`;
+                cell.className = `group relative rounded-lg p-2 border flex flex-col overflow-hidden transition-all shadow-sm cursor-pointer hover:shadow-md ${isToday ? 'border-brand-500 bg-brand-50' : 'border-slate-200 bg-white'}`;
                 
                 if (dayTasks.length > 0) {
                     cell.onclick = () => openDayModal(cellDateStr, dayTasks);
@@ -330,6 +330,43 @@
                 dateNum.className = `text-sm font-medium ${isToday ? 'text-brand-600 font-bold' : 'text-slate-600'}`;
                 dateNum.textContent = day;
                 cell.appendChild(dateNum);
+
+                // --- INTEGRASI BARU: Tombol Hapus Semua Tugas per Hari Tertentu ---
+                if (dayTasks.length > 0) {
+                    const clearBtn = document.createElement('button');
+                    // Tombol disembunyikan secara default (opacity-0) dan muncul secara halus (transition-all dur-200) saat cell di-hover (group-hover:opacity-100)
+                    clearBtn.className = 'absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-white hover:bg-red-50 text-red-500 border border-slate-200 hover:border-red-200 p-1 rounded-md text-xs flex items-center justify-center z-20 shadow-sm h-6 min-w-[24px]';
+                    clearBtn.innerHTML = '<i class="ph ph-trash"></i>';
+                    
+                    let clickCount = 0;
+                    let resetTimeout = null;
+
+                    clearBtn.onclick = (e) => {
+                        e.stopPropagation(); // Mencegah modal bawaan detail tanggal terbuka saat tombol ini diklik
+                        clickCount++;
+
+                        if (clickCount === 1) {
+                            // Mengubah desain tombol menjadi konfirmasi "Yakin?"
+                            clearBtn.innerHTML = '<span class="text-[9px] font-bold px-1">Yakin?</span>';
+                            clearBtn.className = 'absolute top-1 right-1 opacity-100 bg-red-600 text-white p-1 rounded-md text-xs flex items-center justify-center z-20 shadow-md h-6';
+                            
+                            // Jika dalam waktu 3 detik tidak diklik lagi, setel ulang ke ikon trash semula
+                            resetTimeout = setTimeout(() => {
+                                clickCount = 0;
+                                clearBtn.innerHTML = '<i class="ph ph-trash"></i>';
+                                clearBtn.className = 'absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-white hover:bg-red-50 text-red-500 border border-slate-200 hover:border-red-200 p-1 rounded-md text-xs flex items-center justify-center z-20 shadow-sm h-6 min-w-[24px]';
+                            }, 3000);
+                        } else if (clickCount === 2) {
+                            clearTimeout(resetTimeout);
+                            // Menghapus seluruh tugas yang memiliki tanggal yang sama
+                            tasks = tasks.filter(t => t.date !== cellDateStr);
+                            saveTasks();
+                            updateDashboard();
+                        }
+                    };
+                    cell.appendChild(clearBtn);
+                }
+                // --- AKHIR INTEGRASI BARU ---
 
                 const taskList = document.createElement('div');
                 taskList.className = 'flex-1 flex flex-col gap-1 overflow-y-auto text-[10px]';
