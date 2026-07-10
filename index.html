@@ -146,7 +146,6 @@
                     <i class="ph-bold ph-x"></i>
                 </button>
             </div>
-            <!-- Mengubah style container agar jarak antar tugas sedikit lebih renggang -->
             <div class="p-4 overflow-y-auto flex-1 space-y-3" id="day-modal-tasks"></div>
         </div>
     </div>
@@ -396,13 +395,18 @@
             const list = document.getElementById('task-list');
             list.innerHTML = '';
             
-            const sortedTasks = [...tasks].sort((a, b) => {
-                if(a.completed !== b.completed) return a.completed ? 1 : -1;
-                return new Date(a.date) - new Date(b.date);
-            });
+            // --- PEMBARUAN: Menyaring tugas agar yang kadaluarsa (sebelum hari ini) tidak ditampilkan di Sidebar ---
+            const todayStr = formatDateForInput(realToday);
+            
+            const sortedTasks = [...tasks]
+                .filter(task => task.date >= todayStr)
+                .sort((a, b) => {
+                    if(a.completed !== b.completed) return a.completed ? 1 : -1;
+                    return new Date(a.date) - new Date(b.date);
+                });
 
             if (sortedTasks.length === 0) {
-                list.innerHTML = '<div class="flex flex-col items-center justify-center h-40 text-slate-400 text-center"><i class="ph ph-coffee text-4xl mb-2"></i><p class="text-sm">Belum ada tugas</p></div>';
+                list.innerHTML = '<div class="flex flex-col items-center justify-center h-40 text-slate-400 text-center"><i class="ph ph-coffee text-4xl mb-2"></i><p class="text-sm">Tidak ada tugas ke depan</p></div>';
                 return;
             }
 
@@ -487,7 +491,6 @@
 
         window.closeDayModal = () => hideModal('day-modal');
 
-        // --- PEMBARUAN: Modifikasi Fungsi openDayModal untuk menampilkan Detail Keterangan Tugas ---
         function openDayModal(dateStr, dayTasks) {
             const d = new Date(dateStr);
             document.getElementById('day-modal-title').textContent = d.toLocaleDateString('id-ID', {weekday: 'long', day: 'numeric', month:'long'});
@@ -498,10 +501,8 @@
                 const conf = getPriorityConfig(task.priority);
                 const item = document.createElement('div');
                 
-                // Menyesuaikan padding dan layout agar lebih rapi menampung keterangan tugas
                 item.className = 'p-3 rounded-lg border border-slate-200 bg-white flex flex-col gap-1 shadow-sm';
                 
-                // Cek apakah task.desc (Keterangan) ada atau tidak. Jika ada, buat elemen paragraph.
                 const descHtml = task.desc ? `<p class="text-xs text-slate-500 mt-1">${task.desc}</p>` : '';
                 
                 item.innerHTML = `
@@ -516,7 +517,6 @@
             });
             showModal('day-modal');
         }
-        // --- AKHIR PEMBARUAN ---
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('task-date').value = formatDateForInput(realToday);
