@@ -12,8 +12,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
-    <!-- Script Google Identity bawaan HTML dihapus dan diganti dengan Firebase Auth -->
-
+    <!-- KEMBALI MENGGUNAKAN MESIN LOGIN GOOGLE YANG STABIL -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -71,14 +72,15 @@
             <p class="text-sm text-white/90 mb-8 px-4">Platform manajemen tugas pintar dan evaluasi alur kerja harian Anda.</p>
             
             <div class="w-full flex flex-col items-center justify-center mb-2 px-4 mt-2">
-                <!-- Tombol Login Custom untuk memicu Firebase Auth -->
-                <button id="google-login-btn" class="w-full bg-white/90 hover:bg-white text-slate-700 font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-3 transition-all duration-300 shadow-lg border border-white/40">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-                    Masuk dengan Google
-                </button>
+                <!-- TOMBOL LOGIN GOOGLE HYBRID -->
+                <div id="g_id_onload" 
+                     data-client_id="691342255763-c2ehv986h2tnt71sc0c4fh7djce3pkav.apps.googleusercontent.com"
+                     data-callback="handleCredentialResponse">
+                </div>
+                <div id="google-button-container" class="w-full flex justify-center"></div>
             </div>
             
-            <p class="text-[11px] text-white/60 mt-4">Sesi Anda akan tersimpan aman dengan enkripsi Firebase.</p>
+            <p class="text-[11px] text-white/60 mt-4">Sistem Login Lokal & Penyimpanan Cloud Firebase.</p>
         </div>
     </div>
 
@@ -109,6 +111,7 @@
             </div>
 
             <div class="flex-1 px-6 pb-6 pt-0 overflow-y-auto no-scrollbar flex flex-col relative">
+                <!-- FITUR FREEZE HEADER TETAP DIPERTAHANKAN -->
                 <div class="calendar-grid sticky top-0 bg-white z-20 pt-6 pb-2 mb-2 border-b border-slate-50">
                     <div class="text-center text-sm font-semibold text-rose-500">Min</div>
                     <div class="text-center text-sm font-semibold text-slate-500">Sen</div>
@@ -235,14 +238,12 @@
         });
     </script>
 
-    <!-- LOGIKA JAVASCRIPT & FIREBASE AUTHENTICATION (NEW) -->
+    <!-- LOGIKA JAVASCRIPT HYBRID (LOGIN LOKAL + FIREBASE CLOUD) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-        
-        // Impor mesin autentikasi yang tangguh untuk HP
-        import { getAuth, signInWithPopup, signInWithRedirect, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
+        // Konfigurasi Database Firebase Anda (Hanya untuk Database)
         const firebaseConfig = {
             apiKey: "AIzaSyCT1NeZ5EYxsc5GHUITzdAhAiZrmjB3Evw",
             authDomain: "workspace-dilly.firebaseapp.com",
@@ -254,9 +255,8 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
 
+        let currentUserEmail = null; 
         let tasks = [];
         let realToday = new Date();
         let currentDate = new Date(realToday.getFullYear(), realToday.getMonth(), realToday.getDate());
@@ -266,69 +266,84 @@
         let userDocRef = null;
         let unsubscribeSnapshot = null;
 
-        // Listener Sesi Otomatis (Mendeteksi memori login)
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                isLoggedIn = true;
-                
-                // Menampilkan nama di header (Menggunakan nama depan saja jika terlalu panjang)
-                const displayName = user.displayName ? user.displayName.split(' ')[0] : 'User';
-                document.getElementById('user-welcome-text').innerHTML = `Kalender Pekerjaan <span class="font-semibold text-brand-600">${displayName}</span>`;
-                
-                // MENGGUNAKAN UID UNTUK KEAMANAN TINGKAT TINGGI
-                userDocRef = doc(db, 'users', user.uid);
-                
-                unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        tasks = docSnap.data().tasks || [];
-                    } else {
-                        tasks = [];
-                    }
-                    updateDashboard();
-                });
+        // Fungsi Membaca Token Google Identity
+        function decodeJwtResponse(token) {
+            let base64Url = token.split('.')[1];
+            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            let jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
 
-                updateAuthUI();
-            } else {
-                isLoggedIn = false;
-                tasks = [];
-                userDocRef = null;
-                if (unsubscribeSnapshot) {
-                    unsubscribeSnapshot();
-                    unsubscribeSnapshot = null;
-                }
-                updateAuthUI();
-            }
-        });
-
-        // Aksi Tombol Login
-        document.getElementById('google-login-btn').addEventListener('click', async () => {
-            try {
-                // Coba gunakan pop-up terlebih dahulu (Cepat di laptop)
-                await signInWithPopup(auth, provider);
-            } catch (error) {
-                // Jika diblokir oleh browser HP/Safari/In-App Browser, gunakan mode paksa (Redirect)
-                if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
-                    signInWithRedirect(auth, provider);
+        // Pintu Masuk Hybrid: Google Identity -> Menyambung ke Firebase Firestore
+        window.handleCredentialResponse = (response) => {
+            const responsePayload = decodeJwtResponse(response.credential);
+            currentUserEmail = responsePayload.email;
+            
+            isLoggedIn = true;
+            
+            // Tampilkan Nama Pengguna
+            const displayName = responsePayload.name ? responsePayload.name.split(' ')[0] : 'User';
+            document.getElementById('user-welcome-text').innerHTML = `Kalender Pekerjaan <span class="font-semibold text-brand-600">${displayName}</span>`;
+            
+            // Menyambungkan ke Brankas Firebase menggunakan email sebagai Kunci (ID)
+            userDocRef = doc(db, 'users', currentUserEmail);
+            
+            // Bersihkan listener lama jika ada
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+            
+            // Mulai mendengarkan perubahan data secara langsung dari Cloud (Real-time Sync)
+            unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    tasks = docSnap.data().tasks || [];
                 } else {
-                    console.error("Kesalahan Login:", error);
+                    tasks = [];
                 }
-            }
-        });
-
-        // Aksi Tombol Keluar (Logout)
-        window.handleLogout = () => {
-            signOut(auth).catch((error) => {
-                console.error("Gagal keluar:", error);
+                updateDashboard();
             });
+
+            updateAuthUI(); 
         };
 
-        function saveTasks() {
+        // Fungsi Simpan Tugas ke Firebase
+        window.saveTasks = () => {
             if (userDocRef) {
                 setDoc(userDocRef, { tasks: tasks }).catch(error => {
                     console.error("Gagal menyimpan ke Firebase: ", error);
                 });
             }
-        }
+        };
+
+        // Fungsi Logout (Keluar)
+        window.handleLogout = () => {
+            isLoggedIn = false;
+            currentUserEmail = null;
+            tasks = [];
+            
+            if(unsubscribeSnapshot) {
+                unsubscribeSnapshot();
+                unsubscribeSnapshot = null;
+            }
+            
+            // Menonaktifkan memori otomatis Google Identity
+            if (window.google) google.accounts.id.disableAutoSelect();
+            
+            // Mengembalikan UI ke Welcome Page
+            const mainApp = document.getElementById('main-app');
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const welcomeCard = document.getElementById('welcome-card');
+            
+            mainApp.classList.add('opacity-0');
+            setTimeout(() => {
+                mainApp.classList.add('hidden');
+                welcomeScreen.classList.remove('hidden');
+                setTimeout(() => {
+                    welcomeScreen.classList.remove('opacity-0');
+                    welcomeCard.classList.remove('scale-95');
+                }, 50);
+            }, 300);
+        };
 
         function updateAuthUI() {
             const welcomeScreen = document.getElementById('welcome-screen');
@@ -346,16 +361,6 @@
                         mainApp.classList.remove('opacity-0');
                     }, 50);
                 }, 700);
-            } else {
-                mainApp.classList.add('opacity-0');
-                setTimeout(() => {
-                    mainApp.classList.add('hidden');
-                    welcomeScreen.classList.remove('hidden');
-                    setTimeout(() => {
-                        welcomeScreen.classList.remove('opacity-0');
-                        welcomeCard.classList.remove('scale-95');
-                    }, 50);
-                }, 300);
             }
         }
 
@@ -431,7 +436,7 @@
         function finishAddingTask() {
             document.getElementById('task-title').value = '';
             document.getElementById('task-desc').value = '';
-            saveTasks();
+            window.saveTasks();
             updateDashboard();
         }
 
@@ -444,7 +449,7 @@
                 showModal('delete-modal');
             } else {
                 tasks = tasks.filter(t => t.id !== taskId);
-                saveTasks();
+                window.saveTasks();
                 updateDashboard();
             }
         };
@@ -458,7 +463,7 @@
                 tasks = tasks.filter(t => t.id !== taskToDelete.id);
             }
 
-            saveTasks();
+            window.saveTasks();
             updateDashboard();
             closeDeleteModal();
         };
@@ -570,7 +575,7 @@
                         } else if (clickCount === 2) {
                             clearTimeout(resetTimeout);
                             tasks = tasks.filter(t => t.date !== cellDateStr);
-                            saveTasks();
+                            window.saveTasks();
                             updateDashboard();
                         }
                     };
@@ -621,7 +626,7 @@
                 const checkBtn = document.createElement('button');
                 checkBtn.onclick = () => {
                     task.completed = !task.completed;
-                    saveTasks();
+                    window.saveTasks();
                     updateDashboard();
                 };
                 checkBtn.className = `mt-0.5 w-5 h-5 shrink-0 rounded-full border-2 flex items-center justify-center text-xs transition-colors ${task.completed ? 'bg-brand-500 border-brand-500 text-white' : 'border-slate-300'}`;
@@ -652,6 +657,7 @@
             });
         }
 
+        // TOOLTIP CUSTOM TETAP DIPERTAHANKAN
         function generateHeatmap() {
             const heatmap = document.getElementById('heatmap');
             if (!heatmap) return;
@@ -669,8 +675,11 @@
                 const count = taskCounts[dateStr] || 0;
                 
                 const block = document.createElement('div');
+                
+                // Menambahkan class 'group' dan 'relative' untuk memicu tooltip
                 block.className = 'w-3 h-3 rounded-sm transition-colors cursor-pointer group relative';
                 
+                // Elemen custom tooltip
                 const tooltip = document.createElement('div');
                 tooltip.className = 'pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 w-max opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[10px] font-medium px-2 py-1 rounded shadow-lg z-50';
                 tooltip.textContent = `${d.toLocaleDateString('id-ID', {day: 'numeric', month:'short'})}: ${count} tugas`;
@@ -727,9 +736,15 @@
             showModal('day-modal');
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        // MENAMPILKAN TOMBOL GOOGLE KETIKA HALAMAN DIMUAT
+        window.addEventListener('load', () => {
+            if (window.google) {
+                google.accounts.id.renderButton(
+                    document.getElementById('google-button-container'),
+                    { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', logo_alignment: 'left' }
+                );
+            }
             document.getElementById('task-date').value = formatDateForInput(realToday);
-            updateDashboard();
         });
 
     </script>
