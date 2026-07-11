@@ -116,7 +116,7 @@
 
                 <div class="mt-6 pt-4 border-t border-slate-100">
                     <h3 class="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-                        <i class="ph-fill ph-fire text-orange-500"></i> Intensitas Kinerja (30 Hari)
+                        <i class="ph-fill ph-fire text-orange-500"></i> Intensitas Kinerja (30 Hari Kedepan)
                     </h3>
                     <div class="flex flex-wrap gap-1.5" id="heatmap"></div>
                 </div>
@@ -234,7 +234,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // Konfigurasi Firebase Project Anda
         const firebaseConfig = {
             apiKey: "AIzaSyCT1NeZ5EYxsc5GHUITzdAhAiZrmjB3Evw",
             authDomain: "workspace-dilly.firebaseapp.com",
@@ -265,7 +264,6 @@
             return JSON.parse(jsonPayload);
         }
 
-        // Globalisasi fungsi agar bisa diakses oleh HTML
         window.handleCredentialResponse = (response) => {
             const responsePayload = decodeJwtResponse(response.credential);
             currentUserEmail = responsePayload.email;
@@ -273,7 +271,6 @@
             isLoggedIn = true;
             document.getElementById('user-welcome-text').innerHTML = `Kalender Pekerjaan <span class="font-semibold text-brand-600">${responsePayload.name}</span>`;
             
-            // Firebase Cloud Sync - Mode Real-time
             userDocRef = doc(db, 'users', currentUserEmail);
             onSnapshot(userDocRef, (docSnap) => {
                 if (docSnap.exists()) {
@@ -289,7 +286,6 @@
 
         function saveTasks() {
             if (userDocRef) {
-                // Menyimpan langsung ke Cloud Firebase
                 setDoc(userDocRef, { tasks: tasks }).catch(error => {
                     console.error("Gagal menyimpan ke Firebase: ", error);
                 });
@@ -608,25 +604,37 @@
             });
         }
 
+        // FITUR BARU: Menghitung intensitas beban kerja 30 hari ke depan
         function generateHeatmap() {
             const heatmap = document.getElementById('heatmap');
+            if (!heatmap) return;
             heatmap.innerHTML = '';
             const taskCounts = {};
+            
+            // Menghitung SEMUA tugas (selesai maupun belum) berdasarkan tanggal
             tasks.forEach(task => {
-                if (task.completed) taskCounts[task.date] = (taskCounts[task.date] || 0) + 1;
+                taskCounts[task.date] = (taskCounts[task.date] || 0) + 1;
             });
 
-            for (let i = 29; i >= 0; i--) {
+            // Loop 30 hari ke depan (dari i = 0 hari ini sampai i = 29)
+            for (let i = 0; i < 30; i++) {
                 const d = new Date(realToday);
-                d.setDate(d.getDate() - i);
+                d.setDate(d.getDate() + i);
                 const dateStr = formatDateForInput(d);
                 const count = taskCounts[dateStr] || 0;
+                
                 const block = document.createElement('div');
-                block.className = 'w-3 h-3 rounded-sm';
-                if (count === 0) block.classList.add('bg-slate-200');
-                else if (count === 1) block.classList.add('bg-brand-300');
-                else if (count === 2) block.classList.add('bg-brand-500');
-                else block.classList.add('bg-brand-700');
+                block.className = 'w-3 h-3 rounded-sm transition-colors cursor-help';
+                
+                // Tooltip info detail saat di-hover
+                block.title = `${d.toLocaleDateString('id-ID', {day: 'numeric', month:'short'})}: ${count} tugas`;
+
+                // Logika Pewarnaan Baru
+                if (count === 0) block.classList.add('bg-slate-200'); // Abu-abu
+                else if (count === 1) block.classList.add('bg-brand-300'); // Biru Muda
+                else if (count === 2) block.classList.add('bg-brand-500'); // Biru
+                else block.classList.add('bg-brand-700'); // Biru Tua (3 atau lebih)
+                
                 heatmap.appendChild(block);
             }
         }
