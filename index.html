@@ -12,75 +12,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
-    <!-- ============================================================ -->
-    <!-- DEBUG LOGIN: menangkap error yang biasanya cuma tampil di     -->
-    <!-- console DevTools, supaya kelihatan langsung di layar HP.      -->
-    <!-- Ditaruh SEBELUM script GSI supaya error dari Google (mis.     -->
-    <!-- "origin not allowed") ikut tertangkap.                        -->
-    <!-- ============================================================ -->
-    <script>
-        (function () {
-            window.__gsiDebugLogs = [];
-            function pushDebug(prefix, argsArr) {
-                try {
-                    var parts = Array.prototype.map.call(argsArr, function (a) {
-                        if (typeof a === 'string') return a;
-                        try { return JSON.stringify(a); } catch (e) { return String(a); }
-                    });
-                    var msg = prefix + ': ' + parts.join(' ');
-                    window.__gsiDebugLogs.push(msg);
-                    if (typeof window.showDebug === 'function') window.showDebug(msg);
-                } catch (e) { /* jangan sampai debug tool ikut bikin error */ }
-            }
-
-            var origError = console.error;
-            var origWarn = console.warn;
-            console.error = function () { pushDebug('ERROR', arguments); origError.apply(console, arguments); };
-            console.warn = function () { pushDebug('WARN', arguments); origWarn.apply(console, arguments); };
-
-            window.addEventListener('error', function (e) {
-                pushDebug('JS ERROR', [e.message + ' @ ' + (e.filename || '') + ':' + e.lineno]);
-            });
-            window.addEventListener('unhandledrejection', function (e) {
-                var reason = e.reason && (e.reason.message || e.reason);
-                pushDebug('PROMISE ERROR', [reason || 'unknown']);
-            });
-
-            // Deteksi kalau tab sempat di-background lalu di-reload browser/HP
-            // pas proses pilih akun Google (bug umum di beberapa HP Android).
-            document.addEventListener('visibilitychange', function () {
-                if (document.visibilityState === 'hidden') {
-                    try { sessionStorage.setItem('gsi_pending_login', Date.now().toString()); } catch (e) {}
-                }
-            });
-        })();
-
-        document.addEventListener('DOMContentLoaded', function () {
-            var banner = document.getElementById('gsi-debug-banner');
-            var content = document.getElementById('gsi-debug-content');
-
-            window.showDebug = function (msg) {
-                if (!banner || !content) return;
-                var line = document.createElement('div');
-                line.textContent = msg;
-                content.appendChild(line);
-                banner.classList.remove('hidden');
-            };
-
-            (window.__gsiDebugLogs || []).forEach(window.showDebug);
-
-            // Kalau halaman ini baru saja reload sesaat setelah tab
-            // di-background (mis. saat account chooser muncul), kasih tahu.
-            try {
-                var pending = sessionStorage.getItem('gsi_pending_login');
-                if (pending && (Date.now() - parseInt(pending, 10)) < 3 * 60 * 1000) {
-                    window.showDebug('Info: halaman ini tampaknya sempat di-reload oleh browser/HP tepat setelah kamu memilih akun Google (bukan error dari Google). Ini gejala umum browser Android yang mem-background lalu reload tab. Coba: matikan mode hemat baterai, pastikan buka lewat Chrome/Safari asli (bukan browser di dalam aplikasi lain seperti WhatsApp/Instagram), lalu ulangi login.');
-                }
-                sessionStorage.removeItem('gsi_pending_login');
-            } catch (e) {}
-        });
-    </script>
-
     <!-- KEMBALI MENGGUNAKAN MESIN LOGIN GOOGLE YANG STABIL -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
@@ -128,15 +59,6 @@
         
         <!-- LAYER OVERLAY GELAP -->
         <div class="absolute inset-0 z-0 bg-black/20"></div>
-
-        <!-- DEBUG LOGIN: hanya muncul kalau ada error/warning saat proses Google Sign-In -->
-        <div id="gsi-debug-banner" class="hidden absolute top-3 left-3 right-3 z-40 bg-red-600/95 text-white text-xs rounded-lg p-3 shadow-lg max-h-48 overflow-y-auto text-left">
-            <div class="flex justify-between items-start gap-2">
-                <strong class="shrink-0">Debug Login:</strong>
-                <button onclick="document.getElementById('gsi-debug-banner').classList.add('hidden')" class="shrink-0 opacity-80 hover:opacity-100 px-1">✕</button>
-            </div>
-            <div id="gsi-debug-content" class="mt-1 space-y-1 whitespace-pre-wrap break-words"></div>
-        </div>
 
         <div class="absolute bottom-6 left-6 z-10">
             <p class="text-xs text-white/80 font-medium tracking-wide">©2026 Powered by @dillynugros</p>
@@ -356,43 +278,32 @@
 
         // Pintu Masuk Hybrid: Google Identity -> Menyambung ke Firebase Firestore
         window.handleCredentialResponse = (response) => {
-            try {
-                if (!response || !response.credential) {
-                    console.error('GSI callback terpanggil tapi tidak ada credential/token yang dikirim balik oleh Google.');
-                    return;
+            const responsePayload = decodeJwtResponse(response.credential);
+            currentUserEmail = responsePayload.email;
+            
+            isLoggedIn = true;
+            
+            // Tampilkan Nama Pengguna
+            const displayName = responsePayload.name ? responsePayload.name.split(' ')[0] : 'User';
+            document.getElementById('user-welcome-text').innerHTML = `Kalender Pekerjaan <span class="font-semibold text-brand-600">${displayName}</span>`;
+            
+            // Menyambungkan ke Brankas Firebase menggunakan email sebagai Kunci (ID)
+            userDocRef = doc(db, 'users', currentUserEmail);
+            
+            // Bersihkan listener lama jika ada
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+            
+            // Mulai mendengarkan perubahan data secara langsung dari Cloud (Real-time Sync)
+            unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    tasks = docSnap.data().tasks || [];
+                } else {
+                    tasks = [];
                 }
+                updateDashboard();
+            });
 
-                const responsePayload = decodeJwtResponse(response.credential);
-                currentUserEmail = responsePayload.email;
-
-                isLoggedIn = true;
-
-                // Tampilkan Nama Pengguna
-                const displayName = responsePayload.name ? responsePayload.name.split(' ')[0] : 'User';
-                document.getElementById('user-welcome-text').innerHTML = `Kalender Pekerjaan <span class="font-semibold text-brand-600">${displayName}</span>`;
-
-                // Menyambungkan ke Brankas Firebase menggunakan email sebagai Kunci (ID)
-                userDocRef = doc(db, 'users', currentUserEmail);
-
-                // Bersihkan listener lama jika ada
-                if (unsubscribeSnapshot) unsubscribeSnapshot();
-
-                // Mulai mendengarkan perubahan data secara langsung dari Cloud (Real-time Sync)
-                unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        tasks = docSnap.data().tasks || [];
-                    } else {
-                        tasks = [];
-                    }
-                    updateDashboard();
-                }, (err) => {
-                    console.error('Firestore onSnapshot error:', err.message || err);
-                });
-
-                updateAuthUI();
-            } catch (err) {
-                console.error('Gagal memproses login Google (handleCredentialResponse):', err.message || err);
-            }
+            updateAuthUI(); 
         };
 
         // Fungsi Simpan Tugas ke Firebase
@@ -832,8 +743,6 @@
                     document.getElementById('google-button-container'),
                     { theme: 'outline', size: 'large', text: 'signin_with', shape: 'rectangular', logo_alignment: 'left' }
                 );
-            } else {
-                console.error('Skrip Google Identity Services (accounts.google.com/gsi/client) gagal dimuat. Cek koneksi internet HP, atau ada ad-blocker/DNS filter yang memblokir domain Google.');
             }
             document.getElementById('task-date').value = formatDateForInput(realToday);
         });
