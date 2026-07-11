@@ -7,12 +7,12 @@
     <link rel="shortcut icon" href="/logo.png" type="image/png">
     <link rel="icon" href="/logo.png" type="image/png">
     
-    <!-- Preload gambar utama agar didahulukan oleh browser -->
     <link rel="preload" as="image" href="bg-workspace.webp">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -62,7 +62,7 @@
             <p class="text-xs text-white/80 font-medium tracking-wide">©2026 Powered by @dillynugros</p>
         </div>
 
-        <!-- KARTU LOGIN KACA EMBUN -->
+        <!-- KARTU LOGIN -->
         <div class="bg-white/10 backdrop-blur-md p-10 rounded-3xl shadow-2xl flex flex-col items-center max-w-md w-[90%] text-center border border-white/20 transition-transform duration-700 z-10" id="welcome-card">
             <img src="logo.webp" alt="Workspace AI Logo" class="w-24 h-24 object-contain mb-5 drop-shadow-sm">
             
@@ -78,15 +78,14 @@
             
             <p class="text-[11px] text-white/60 mt-3">Silakan masuk menggunakan akun Google Anda untuk melanjutkan.</p>
         </div>
-    </div> <!-- PENUTUP WELCOME SCREEN YANG SEBELUMNYA HILANG -->
-
+    </div>
 
     <!-- ========================================== -->
     <!-- INTERFACE 2: MAIN DASHBOARD (KALENDER) -->
     <!-- ========================================== -->
     <div id="main-app" class="w-full h-full flex flex-col md:flex-row hidden opacity-0 transition-opacity duration-700 ease-in-out">
         
-        <!-- PANEL KIRI (KALENDER) -->
+        <!-- PANEL KIRI -->
         <div class="w-full md:w-2/3 h-full flex flex-col border-r border-slate-200 bg-white">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white shadow-sm z-10">
                 <div>
@@ -98,7 +97,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <button onclick="changeMonth(-1)" class="p-2 hover:bg-slate-100 rounded-full"><i class="ph ph-caret-left text-xl"></i></button>
-                    <h2 id="current-month-display" class="text-xl font-semibold min-w-[150px] text-center">Juli 2026</h2>
+                    <h2 id="current-month-display" class="text-xl font-semibold min-w-[150px] text-center">Memuat...</h2>
                     <button onclick="changeMonth(1)" class="p-2 hover:bg-slate-100 rounded-full"><i class="ph ph-caret-right text-xl"></i></button>
                 </div>
             </div>
@@ -128,7 +127,7 @@
             </div>
         </div>
 
-        <!-- PANEL KANAN (TUGAS) -->
+        <!-- PANEL KANAN -->
         <div class="w-full md:w-1/3 h-full bg-slate-50 flex flex-col relative">
             <div id="task-form" class="p-6 bg-white border-b border-slate-200 shadow-sm z-10">
                 <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -218,17 +217,44 @@
         </div>
     </div>
 
-    <!-- LOGIKA JAVASCRIPT -->
+    <!-- PRELOAD BACKGROUND SCRIPT -->
     <script>
-        const BASE_STORAGE_KEY = 'workspace-dilly-tasks';
+        window.addEventListener('DOMContentLoaded', () => {
+            const bgImage = new Image();
+            bgImage.src = 'bg-workspace.webp'; 
+            bgImage.onload = () => {
+                const layer = document.getElementById('bg-image-layer');
+                if (layer) layer.classList.remove('opacity-0');
+            };
+        });
+    </script>
+
+    <!-- LOGIKA JAVASCRIPT & FIREBASE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // Konfigurasi Firebase Project Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyCT1NeZ5EYxsc5GHUITzdAhAiZrmjB3Evw",
+            authDomain: "workspace-dilly.firebaseapp.com",
+            projectId: "workspace-dilly",
+            storageBucket: "workspace-dilly.firebasestorage.app",
+            messagingSenderId: "636000694486",
+            appId: "1:636000694486:web:3ce704a62bea4edcbad977"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
         let currentUserEmail = null; 
-        
         let tasks = [];
         let realToday = new Date();
         let currentDate = new Date(realToday.getFullYear(), realToday.getMonth(), realToday.getDate());
         let pendingRoutineTask = null;
         let taskToDelete = null; 
         let isLoggedIn = false;
+        let userDocRef = null;
 
         function decodeJwtResponse(token) {
             let base64Url = token.split('.')[1];
@@ -239,20 +265,35 @@
             return JSON.parse(jsonPayload);
         }
 
-        function getStorageKey() {
-            return currentUserEmail ? `${BASE_STORAGE_KEY}-${currentUserEmail}` : BASE_STORAGE_KEY;
-        }
-
-        function handleCredentialResponse(response) {
+        // Globalisasi fungsi agar bisa diakses oleh HTML
+        window.handleCredentialResponse = (response) => {
             const responsePayload = decodeJwtResponse(response.credential);
             currentUserEmail = responsePayload.email;
             
             isLoggedIn = true;
             document.getElementById('user-welcome-text').innerHTML = `Kalender Pekerjaan <span class="font-semibold text-brand-600">${responsePayload.name}</span>`;
             
-            loadTasks();
-            updateDashboard();
+            // Firebase Cloud Sync - Mode Real-time
+            userDocRef = doc(db, 'users', currentUserEmail);
+            onSnapshot(userDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    tasks = docSnap.data().tasks || [];
+                } else {
+                    tasks = [];
+                }
+                updateDashboard();
+            });
+
             updateAuthUI(); 
+        };
+
+        function saveTasks() {
+            if (userDocRef) {
+                // Menyimpan langsung ke Cloud Firebase
+                setDoc(userDocRef, { tasks: tasks }).catch(error => {
+                    console.error("Gagal menyimpan ke Firebase: ", error);
+                });
+            }
         }
 
         function updateAuthUI() {
@@ -272,23 +313,6 @@
                     }, 50);
                 }, 700);
             }
-        }
-
-        function loadTasks() {
-            const saved = localStorage.getItem(getStorageKey());
-            if (saved) {
-                try {
-                    tasks = JSON.parse(saved);
-                } catch (e) {
-                    tasks = [];
-                }
-            } else {
-                tasks = [];
-            }
-        }
-
-        function saveTasks() {
-            localStorage.setItem(getStorageKey(), JSON.stringify(tasks));
         }
 
         window.changeMonth = (delta) => {
@@ -572,7 +596,7 @@
 
                 const delBtn = document.createElement('button');
                 delBtn.onclick = () => {
-                    promptDeleteTask(task.id);
+                    window.promptDeleteTask(task.id);
                 };
                 delBtn.className = 'w-6 h-6 shrink-0 rounded flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 text-xs';
                 delBtn.innerHTML = '<i class="ph-bold ph-trash"></i>';
@@ -658,15 +682,6 @@
                 document.getElementById('g_id_onload'),
                 { theme: 'outline', size: 'large', text: 'signin_with' }
             );
-        });
-
-        window.addEventListener('DOMContentLoaded', () => {
-            const bgImage = new Image();
-            bgImage.src = 'bg-workspace.webp'; 
-            
-            bgImage.onload = () => {
-                document.getElementById('bg-image-layer').classList.remove('opacity-0');
-            };
         });
 
     </script>
