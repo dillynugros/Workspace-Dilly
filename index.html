@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 1. Perubahan Judul Tab -->
     <title>WorkspaceAI</title>
-    <!-- 2. Perubahan Ikon Tab Menjadi Kalender -->
-    <link rel="icon" type="image/png" href="logoai.png">
+    <link rel="icon" type="image/png" href="logo.png">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -43,88 +41,111 @@
         .glass-modal { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 h-screen flex flex-col md:flex-row font-sans overflow-hidden">
-    <!-- PANEL KIRI (KALENDER) -->
-    <div class="w-full md:w-2/3 h-full flex flex-col border-r border-slate-200 bg-white">
-        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white shadow-sm z-10">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
-    <img src="logoai.png" alt="Logo" class="w-8 h-8 object-contain drop-shadow-sm">
-    Workspace AI v1.0
-</h1>
-                <p class="text-sm text-slate-500" id="user-welcome-text">Kalender Pekerjaan Mas Dilly</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <button onclick="changeMonth(-1)" class="p-2 hover:bg-slate-100 rounded-full"><i class="ph ph-caret-left text-xl"></i></button>
-                <h2 id="current-month-display" class="text-xl font-semibold min-w-[150px] text-center">Juli 2026</h2>
-                <button onclick="changeMonth(1)" class="p-2 hover:bg-slate-100 rounded-full"><i class="ph ph-caret-right text-xl"></i></button>
-            </div>
-        </div>
+<body class="bg-slate-50 text-slate-800 h-screen font-sans overflow-hidden relative">
 
-        <div class="flex-1 p-6 overflow-y-auto no-scrollbar flex flex-col">
-            <div class="calendar-grid mb-2">
-                <div class="text-center text-sm font-semibold text-rose-500">Min</div>
-                <div class="text-center text-sm font-semibold text-slate-500">Sen</div>
-                <div class="text-center text-sm font-semibold text-slate-500">Sel</div>
-                <div class="text-center text-sm font-semibold text-slate-500">Rab</div>
-                <div class="text-center text-sm font-semibold text-slate-500">Kam</div>
-                <div class="text-center text-sm font-semibold text-slate-500">Jum</div>
-                <div class="text-center text-sm font-semibold text-brand-500">Sab</div>
-            </div>
-            <div id="calendar-body" class="calendar-grid flex-1"></div>
-
-            <div class="mt-6 pt-4 border-t border-slate-100">
-                <h3 class="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
-                    <i class="ph-fill ph-fire text-orange-500"></i> Intensitas Kinerja (30 Hari)
-                </h3>
-                <div class="flex flex-wrap gap-1.5" id="heatmap"></div>
-            </div>
-        </div>
+    <!-- ========================================== -->
+    <!-- INTERFACE 1: WELCOME PAGE -->
+    <!-- ========================================== -->
+    <div id="welcome-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-50 transition-all duration-700 ease-in-out">
         
-        <!-- 3. Tambahan Footer Kiri Bawah -->
-        <div class="px-6 py-2 bg-slate-50 border-t border-slate-100 z-10 shrink-0">
-            <p class="text-[11px] text-slate-400 font-medium">©2026 Powered by @dillynugros</p>
+        <!-- Tulisan Pojok Kiri Bawah -->
+        <div class="absolute bottom-6 left-6">
+            <p class="text-xs text-slate-400 font-medium tracking-wide">©2026 Powered by @dillynugros</p>
+        </div>
+
+        <div class="bg-white p-10 rounded-3xl shadow-xl flex flex-col items-center max-w-md w-[90%] text-center border border-slate-100 transition-transform duration-700" id="welcome-card">
+            <img src="logo.png" alt="Workspace AI Logo" class="w-24 h-24 object-contain mb-5 drop-shadow-sm">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2">Workspace AI</h1>
+            <p class="text-sm text-slate-500 mb-8 px-4">Platform manajemen tugas pintar dan evaluasi alur kerja harian Anda.</p>
+            
+            <div class="w-full flex flex-col items-center justify-center mb-2">
+                <div id="g_id_onload" 
+                     data-client_id="691342255763-c2ehv986h2tnt71sc0c4fh7djce3pkav.apps.googleusercontent.com"
+                     data-callback="handleCredentialResponse">
+                </div>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-3">Silakan masuk menggunakan akun Google Anda untuk melanjutkan.</p>
         </div>
     </div>
 
-    <!-- PANEL KANAN (TUGAS & LOGIN) -->
-    <div class="w-full md:w-1/3 h-full bg-slate-50 flex flex-col relative">
-        <div id="auth-section" class="p-6 bg-blue-50 border-b border-blue-200">
-            <h3 class="text-sm font-bold text-blue-900 mb-4">🔐 Masuk dengan Google</h3>
-            <div id="g_id_onload" 
-                 data-client_id="691342255763-c2ehv986h2tnt71sc0c4fh7djce3pkav.apps.googleusercontent.com"
-                 data-callback="handleCredentialResponse">
-            </div>
-            <p class="text-xs text-blue-600 mt-3">Data akan tersimpan secara spesifik untuk akun Anda.</p>
-        </div>
 
-        <div id="task-form" class="p-6 bg-white border-b border-slate-200 shadow-sm z-10 hidden">
-            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <i class="ph-fill ph-plus-circle text-brand-500"></i> Tambah Tugas
-            </h3>
-            <div class="space-y-3">
-                <input type="text" id="task-title" placeholder="Judul Tugas..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all">
-                <textarea id="task-desc" placeholder="Keterangan..." rows="2" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 resize-none"></textarea>
-                <div class="flex gap-2">
-                    <select id="task-priority" class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none text-sm">
-                        <option value="high">🔴 Mendesak</option>
-                        <option value="medium">🟡 Penting</option>
-                        <option value="low">🔵 Kasual</option>
-                        <option value="routine">🟢 Rutinitas</option>
-                    </select>
-                    <input type="date" id="task-date" class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm transition-all duration-300">
+    <!-- ========================================== -->
+    <!-- INTERFACE 2: MAIN DASHBOARD (KALENDER) -->
+    <!-- ========================================== -->
+    <div id="main-app" class="w-full h-full flex flex-col md:flex-row hidden opacity-0 transition-opacity duration-700 ease-in-out">
+        
+        <!-- PANEL KIRI (KALENDER) -->
+        <div class="w-full md:w-2/3 h-full flex flex-col border-r border-slate-200 bg-white">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white shadow-sm z-10">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                        <img src="logo.png" alt="Logo" class="w-8 h-8 object-contain drop-shadow-sm">
+                        Workspace AI v.1.0
+                    </h1>
+                    <p class="text-sm text-slate-500" id="user-welcome-text">Memuat Data...</p>
                 </div>
-                <button onclick="handleAddTask()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm">
-                    <i class="ph-bold ph-paper-plane-right"></i> Tambahkan
-                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="changeMonth(-1)" class="p-2 hover:bg-slate-100 rounded-full"><i class="ph ph-caret-left text-xl"></i></button>
+                    <h2 id="current-month-display" class="text-xl font-semibold min-w-[150px] text-center">Juli 2026</h2>
+                    <button onclick="changeMonth(1)" class="p-2 hover:bg-slate-100 rounded-full"><i class="ph ph-caret-right text-xl"></i></button>
+                </div>
+            </div>
+
+            <div class="flex-1 p-6 overflow-y-auto no-scrollbar flex flex-col">
+                <div class="calendar-grid mb-2">
+                    <div class="text-center text-sm font-semibold text-rose-500">Min</div>
+                    <div class="text-center text-sm font-semibold text-slate-500">Sen</div>
+                    <div class="text-center text-sm font-semibold text-slate-500">Sel</div>
+                    <div class="text-center text-sm font-semibold text-slate-500">Rab</div>
+                    <div class="text-center text-sm font-semibold text-slate-500">Kam</div>
+                    <div class="text-center text-sm font-semibold text-slate-500">Jum</div>
+                    <div class="text-center text-sm font-semibold text-brand-500">Sab</div>
+                </div>
+                <div id="calendar-body" class="calendar-grid flex-1"></div>
+
+                <div class="mt-6 pt-4 border-t border-slate-100">
+                    <h3 class="text-sm font-semibold text-slate-600 mb-3 flex items-center gap-2">
+                        <i class="ph-fill ph-fire text-orange-500"></i> Intensitas Kinerja (30 Hari)
+                    </h3>
+                    <div class="flex flex-wrap gap-1.5" id="heatmap"></div>
+                </div>
+            </div>
+            
+            <div class="px-6 py-2 bg-slate-50 border-t border-slate-100 z-10 shrink-0">
+                <p class="text-[11px] text-slate-400 font-medium">©2026 Powered by @dillynugros</p>
             </div>
         </div>
 
-        <div id="task-header" class="px-6 py-4 flex items-center justify-between hidden">
-            <h3 class="font-bold text-slate-700">Daftar Tugas</h3>
-        </div>
+        <!-- PANEL KANAN (TUGAS) -->
+        <div class="w-full md:w-1/3 h-full bg-slate-50 flex flex-col relative">
+            <div id="task-form" class="p-6 bg-white border-b border-slate-200 shadow-sm z-10">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="ph-fill ph-plus-circle text-brand-500"></i> Tambah Tugas
+                </h3>
+                <div class="space-y-3">
+                    <input type="text" id="task-title" placeholder="Judul Tugas..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all">
+                    <textarea id="task-desc" placeholder="Keterangan..." rows="2" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 resize-none"></textarea>
+                    <div class="flex gap-2">
+                        <select id="task-priority" class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none text-sm">
+                            <option value="high">🔴 Mendesak</option>
+                            <option value="medium">🟡 Penting</option>
+                            <option value="low">🔵 Kasual</option>
+                            <option value="routine">🟢 Rutinitas</option>
+                        </select>
+                        <input type="date" id="task-date" class="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-sm transition-all duration-300">
+                    </div>
+                    <button onclick="handleAddTask()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm">
+                        <i class="ph-bold ph-paper-plane-right"></i> Tambahkan
+                    </button>
+                </div>
+            </div>
 
-        <div id="task-list" class="flex-1 overflow-y-auto px-6 pb-6 space-y-3 no-scrollbar"></div>
+            <div id="task-header" class="px-6 py-4 flex items-center justify-between">
+                <h3 class="font-bold text-slate-700">Daftar Tugas</h3>
+            </div>
+
+            <div id="task-list" class="flex-1 overflow-y-auto px-6 pb-6 space-y-3 no-scrollbar"></div>
+        </div>
     </div>
 
     <!-- MODALS -->
@@ -162,6 +183,7 @@
         </div>
     </div>
 
+    <!-- LOGIKA JAVASCRIPT -->
     <script>
         const BASE_STORAGE_KEY = 'workspace-dilly-tasks';
         let currentUserEmail = null; 
@@ -192,27 +214,34 @@
             console.log('✅ Login berhasil sebagai:', currentUserEmail);
             
             isLoggedIn = true;
-            updateAuthUI();
-            
             document.getElementById('user-welcome-text').innerHTML = `Kalender Pekerjaan <span class="font-semibold text-brand-600">${responsePayload.name}</span>`;
             
             loadTasks();
             updateDashboard();
+            updateAuthUI(); // Memanggil fungsi transisi pindah halaman
         }
 
+        // FUNGSI BARU: Animasi Pindah Halaman dari Welcome ke Main App
         function updateAuthUI() {
-            const authSection = document.getElementById('auth-section');
-            const taskForm = document.getElementById('task-form');
-            const taskHeader = document.getElementById('task-header');
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const welcomeCard = document.getElementById('welcome-card');
+            const mainApp = document.getElementById('main-app');
 
             if (isLoggedIn) {
-                authSection.classList.add('hidden');
-                taskForm.classList.remove('hidden');
-                taskHeader.classList.remove('hidden');
-            } else {
-                authSection.classList.remove('hidden');
-                taskForm.classList.add('hidden');
-                taskHeader.classList.add('hidden');
+                // Memberikan efek mengecil dan memudar pada halaman Welcome
+                welcomeScreen.classList.add('opacity-0');
+                welcomeCard.classList.add('scale-95');
+                
+                // Menunggu transisi selesai, lalu menghilangkan halaman Welcome dan memunculkan Dashboard
+                setTimeout(() => {
+                    welcomeScreen.classList.add('hidden');
+                    
+                    mainApp.classList.remove('hidden');
+                    // Memberikan sedikit jeda sebelum transisi opasitas agar efek fade-in berjalan mulus
+                    setTimeout(() => {
+                        mainApp.classList.remove('opacity-0');
+                    }, 50);
+                }, 700);
             }
         }
 
